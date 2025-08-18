@@ -644,6 +644,38 @@ def uploaded_file(filename):
 def health():
     return jsonify({'status': 'healthy'})
 
+# Serve React App (production mode)
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_react_app(path):
+    """Serve React app for all non-API routes in production"""
+    # Check if we're in production mode
+    if os.getenv('FLASK_ENV') == 'production' or os.getenv('FLASK_DEBUG', 'True').lower() == 'false':
+        # Path to the React build directory
+        react_build_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'build')
+        
+        # If build directory doesn't exist, return error
+        if not os.path.exists(react_build_dir):
+            return jsonify({
+                'error': 'Frontend not built',
+                'message': 'Run "cd frontend && npm run build" first'
+            }), 500
+        
+        # Serve static files
+        if path and os.path.exists(os.path.join(react_build_dir, path)):
+            return send_from_directory(react_build_dir, path)
+        
+        # For all other routes, serve index.html (React Router will handle routing)
+        return send_from_directory(react_build_dir, 'index.html')
+    
+    # In development mode, return API info
+    return jsonify({
+        'message': 'RoadWeave API',
+        'status': 'Development mode',
+        'frontend': 'Run separately with npm start',
+        'version': '1.0.0'
+    })
+
 def migrate_database():
     """Apply database migrations for new columns"""
     try:

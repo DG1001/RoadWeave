@@ -390,14 +390,55 @@ services:
       - REACT_APP_API_BASE=http://backend:5000
 ```
 
-**Production Deployment:**
-```bash
-# Build React app for production
-cd frontend
-REACT_APP_API_BASE=https://api.yourdomain.com npm run build
+**Production Deployment with Single Subdomain:**
 
-# Serve with nginx, Apache, or Flask
-```
+For production deployment on a subdomain (e.g., roadweave.yourdomain.com) with nginx proxy:
+
+1. **Build the application:**
+   ```bash
+   # Build React frontend for production
+   cd frontend
+   REACT_APP_API_BASE=https://roadweave.yourdomain.com npm run build
+   cd ..
+   
+   # The Flask backend will serve both API and React static files
+   ```
+
+2. **Configure Flask to serve static files** (automatically configured)
+
+3. **Setup nginx proxy:**
+   ```nginx
+   server {
+       listen 80;
+       server_name roadweave.yourdomain.com;
+       return 301 https://$server_name$request_uri;
+   }
+   
+   server {
+       listen 443 ssl;
+       server_name roadweave.yourdomain.com;
+       
+       ssl_certificate /path/to/ssl/cert.pem;
+       ssl_certificate_key /path/to/ssl/private.key;
+       
+       location / {
+           proxy_pass http://localhost:5000;
+           proxy_set_header Host $host;
+           proxy_set_header X-Real-IP $remote_addr;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
+   }
+   ```
+
+4. **Create systemd service:**
+   ```bash
+   sudo cp deploy/roadweave.service /etc/systemd/system/
+   sudo systemctl enable roadweave
+   sudo systemctl start roadweave
+   ```
+
+**Docker Deployment:**
 
 ### Security Notes
 
@@ -464,6 +505,193 @@ roadweave/
 - Monitor network requests for API issues
 - Check console for JavaScript errors
 - Use Flask debug mode for backend development
+
+## Production Deployment Guide
+
+### Overview
+
+RoadWeave can be deployed on a single subdomain using Flask to serve both the React frontend and API endpoints. This approach simplifies deployment and reduces server resource usage.
+
+### Prerequisites
+
+- Linux server with Python 3.8+ and Node.js 14+
+- Nginx reverse proxy
+- SSL certificate for HTTPS
+- Domain/subdomain pointing to your server
+
+### Step-by-Step Deployment
+
+#### 1. Server Preparation
+
+```bash
+# Clone repository
+git clone <your-repo> /opt/roadweave
+cd /opt/roadweave
+
+# Create Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install backend dependencies
+pip install -r backend/requirements.txt
+
+# Install frontend dependencies
+cd frontend && npm install && cd ..
+```
+
+#### 2. Build Production Frontend
+
+```bash
+# Set production API base URL
+cd frontend
+REACT_APP_API_BASE=https://roadweave.yourdomain.com npm run build
+cd ..
+```
+
+#### 3. Configure Environment
+
+```bash
+# Copy and edit backend environment
+cp backend/.env.example backend/.env
+
+# Edit backend/.env with production values:
+# GEMINI_API_KEY=your-actual-api-key
+# FLASK_ENV=production
+# FLASK_DEBUG=False
+# ADMIN_USERNAME=admin
+# ADMIN_PASSWORD=your-secure-password
+# SECRET_KEY=your-production-secret-key
+# JWT_SECRET_KEY=your-production-jwt-key
+```
+
+#### 4. Deploy Configuration Files
+
+```bash
+# Copy systemd service
+sudo cp deploy/roadweave.service /etc/systemd/system/
+
+# Copy nginx configuration
+sudo cp deploy/nginx.conf /etc/nginx/sites-available/roadweave
+sudo ln -s /etc/nginx/sites-available/roadweave /etc/nginx/sites-enabled/
+
+# Test nginx configuration
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+#### 5. Start Services
+
+```bash
+# Enable and start RoadWeave
+sudo systemctl enable roadweave
+sudo systemctl start roadweave
+
+# Check status
+sudo systemctl status roadweave
+sudo journalctl -u roadweave -f
+```
+
+#### 6. SSL Certificate (Let's Encrypt)
+
+```bash
+# Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obtain certificate
+sudo certbot --nginx -d roadweave.yourdomain.com
+
+# Auto-renewal
+sudo systemctl enable certbot.timer
+```
+
+### Deployment Structure
+
+```
+/opt/roadweave/
+├── backend/
+│   ├── app.py              # Main Flask app
+│   ├── .env                # Production environment
+│   └── uploads/            # File uploads directory
+├── frontend/
+│   └── build/              # Built React app (served by Flask)
+├── deploy/
+│   ├── roadweave.service   # Systemd service
+│   ├── nginx.conf          # Nginx configuration
+│   └── build.sh            # Build script
+└── venv/                   # Python virtual environment
+```
+
+### Production Configuration
+
+**Backend serves everything:**
+- `/api/*` → API endpoints
+- `/*` → React static files
+- `/uploads/*` → User uploads
+
+**Single port deployment:**
+- Flask runs on localhost:5000
+- Nginx proxies subdomain to Flask
+- HTTPS handled by nginx + SSL certificate
+
+### Monitoring and Maintenance
+
+```bash
+# View logs
+sudo journalctl -u roadweave -f
+
+# Restart service
+sudo systemctl restart roadweave
+
+# Update deployment
+cd /opt/roadweave
+git pull
+source venv/bin/activate
+pip install -r backend/requirements.txt
+cd frontend && npm install && npm run build && cd ..
+sudo systemctl restart roadweave
+```
+
+### Backup Strategy
+
+```bash
+# Backup database and uploads
+tar -czf roadweave-backup-$(date +%Y%m%d).tar.gz \
+    backend/roadweave.db \
+    backend/uploads/
+
+# Restore from backup
+tar -xzf roadweave-backup-YYYYMMDD.tar.gz
+```
+
+### Troubleshooting
+
+**Common Issues:**
+
+1. **Service won't start:**
+   ```bash
+   sudo journalctl -u roadweave --no-pager
+   # Check environment variables and file permissions
+   ```
+
+2. **502 Bad Gateway:**
+   ```bash
+   # Check if Flask is running
+   sudo systemctl status roadweave
+   # Check nginx configuration
+   sudo nginx -t
+   ```
+
+3. **API calls failing:**
+   ```bash
+   # Check CORS configuration
+   # Verify REACT_APP_API_BASE matches subdomain
+   ```
+
+4. **File uploads not working:**
+   ```bash
+   # Check uploads directory permissions
+   sudo chown -R roadweave:roadweave /opt/roadweave/backend/uploads
+   ```
 
 ## Development Credits
 
