@@ -31,3 +31,4 @@ frontend/.env
 Thumbs.db
 prompt.md
 frontend/node_modules/
+backend/uploads/

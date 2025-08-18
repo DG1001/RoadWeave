@@ -120,7 +120,7 @@ function TravelerPWA() {
       formData.append('content', textContent);
     } else if (entryType === 'photo' && selectedFile) {
       formData.append('file', selectedFile);
-      formData.append('content', 'Photo upload');
+      formData.append('content', textContent || 'Photo upload');
     } else if (entryType === 'audio' && audioBlob) {
       const audioFile = new File([audioBlob], `audio_${Date.now()}.webm`, { type: 'audio/webm' });
       formData.append('file', audioFile);
@@ -266,21 +266,32 @@ function TravelerPWA() {
 
             {/* Photo Entry */}
             {entryType === 'photo' && (
-              <div className="form-group">
-                <label>Select a photo:</label>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  onChange={handleFileSelect}
-                  required
-                />
-                {selectedFile && (
-                  <p style={{ marginTop: '10px', color: '#28a745' }}>
-                    ✓ Selected: {selectedFile.name}
-                  </p>
-                )}
+              <div>
+                <div className="form-group">
+                  <label>Select a photo:</label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileSelect}
+                    required
+                  />
+                  {selectedFile && (
+                    <p style={{ marginTop: '10px', color: '#28a745' }}>
+                      ✓ Selected: {selectedFile.name}
+                    </p>
+                  )}
+                </div>
+                <div className="form-group">
+                  <label>Add a comment about this photo (optional):</label>
+                  <textarea
+                    value={textContent}
+                    onChange={(e) => setTextContent(e.target.value)}
+                    placeholder="Describe what's in this photo, where it was taken, or how you're feeling..."
+                    rows="3"
+                  />
+                </div>
               </div>
             )}
 

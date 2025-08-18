@@ -3,11 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders } from '../config/api';
 
+// Available languages for blog generation
+const LANGUAGES = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'fr', name: 'French' },
+  { code: 'de', name: 'German' },
+  { code: 'it', name: 'Italian' },
+  { code: 'pt', name: 'Portuguese' },
+  { code: 'ru', name: 'Russian' },
+  { code: 'ja', name: 'Japanese' },
+  { code: 'ko', name: 'Korean' },
+  { code: 'zh', name: 'Chinese' },
+  { code: 'ar', name: 'Arabic' },
+  { code: 'hi', name: 'Hindi' },
+  { code: 'nl', name: 'Dutch' },
+  { code: 'sv', name: 'Swedish' },
+  { code: 'no', name: 'Norwegian' },
+  { code: 'da', name: 'Danish' },
+  { code: 'fi', name: 'Finnish' },
+  { code: 'pl', name: 'Polish' },
+  { code: 'tr', name: 'Turkish' }
+];
+
 function AdminDashboard() {
   const [trips, setTrips] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [travelers, setTravelers] = useState([]);
-  const [newTrip, setNewTrip] = useState({ name: '', description: '' });
+  const [newTrip, setNewTrip] = useState({ name: '', description: '', blog_language: 'en' });
   const [newTraveler, setNewTraveler] = useState({ name: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,7 +82,7 @@ function AdminDashboard() {
       await axios.post(getApiUrl('/api/admin/trips'), newTrip, {
         headers: getAuthHeaders()
       });
-      setNewTrip({ name: '', description: '' });
+      setNewTrip({ name: '', description: '', blog_language: 'en' });
       setSuccess('Trip created successfully!');
       loadTrips();
     } catch (err) {
@@ -105,6 +128,24 @@ function AdminDashboard() {
       setSuccess('Blog regenerated successfully!');
     } catch (err) {
       setError('Failed to regenerate blog');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateTripLanguage = async (tripId, language) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await axios.put(getApiUrl(`/api/admin/trips/${tripId}/language`), { language }, {
+        headers: getAuthHeaders()
+      });
+      setSuccess(`Language updated to ${LANGUAGES.find(l => l.code === language)?.name}! Consider regenerating the blog.`);
+      loadTrips(); // Refresh trips list
+    } catch (err) {
+      setError('Failed to update language');
     } finally {
       setLoading(false);
     }
@@ -159,6 +200,19 @@ function AdminDashboard() {
                   onChange={(e) => setNewTrip({...newTrip, description: e.target.value})}
                 />
               </div>
+              <div className="form-group">
+                <label>Blog Language:</label>
+                <select
+                  value={newTrip.blog_language}
+                  onChange={(e) => setNewTrip({...newTrip, blog_language: e.target.value})}
+                >
+                  {LANGUAGES.map(lang => (
+                    <option key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button type="submit" className="btn" disabled={loading}>
                 Create Trip
               </button>
@@ -202,9 +256,28 @@ function AdminDashboard() {
                           regenerateBlog(trip.id);
                         }}
                         className="btn btn-secondary"
+                        style={{ marginRight: '10px' }}
                       >
                         Regenerate Blog
                       </button>
+                    </div>
+                    <div style={{ marginTop: '10px', fontSize: '0.9em' }}>
+                      <label style={{ marginRight: '10px' }}>Language:</label>
+                      <select
+                        value={trip.blog_language || 'en'}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          updateTripLanguage(trip.id, e.target.value);
+                        }}
+                        style={{ fontSize: '0.9em' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {LANGUAGES.map(lang => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 ))}

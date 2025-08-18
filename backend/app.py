@@ -44,6 +44,7 @@ class Trip(db.Model):
     admin_token = db.Column(db.String(100), unique=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     blog_content = db.Column(db.Text, default='')
+    blog_language = db.Column(db.String(10), default='en')  # Language code (en, es, fr, de, etc.)
     
     travelers = db.relationship('Traveler', backref='trip', lazy=True, cascade='all, delete-orphan')
     entries = db.relationship('Entry', backref='trip', lazy=True, cascade='all, delete-orphan')
@@ -105,6 +106,29 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp3', 'wav', 'ogg', 'webm'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Language code to language name mapping
+LANGUAGE_NAMES = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pt': 'Portuguese',
+    'ru': 'Russian',
+    'ja': 'Japanese',
+    'ko': 'Korean',
+    'zh': 'Chinese',
+    'ar': 'Arabic',
+    'hi': 'Hindi',
+    'nl': 'Dutch',
+    'sv': 'Swedish',
+    'no': 'Norwegian',
+    'da': 'Danish',
+    'fi': 'Finnish',
+    'pl': 'Polish',
+    'tr': 'Turkish'
+}
+
 # AI Integration
 def generate_blog_update(trip, new_entry):
     try:
@@ -114,8 +138,13 @@ def generate_blog_update(trip, new_entry):
         existing_blog = trip.blog_content or "This is the beginning of a travel blog."
         location_info = f"GPS coordinates: {new_entry.latitude}, {new_entry.longitude}" if new_entry.latitude and new_entry.longitude else "No location data"
         
+        # Get language name for the prompt
+        language_name = LANGUAGE_NAMES.get(trip.blog_language, 'English')
+        
         prompt = f"""
         You are helping to incrementally update a travel blog for a trip called "{trip.name}".
+        
+        IMPORTANT: Write your response in {language_name} language.
         
         Current blog content:
         {existing_blog}
@@ -127,10 +156,10 @@ def generate_blog_update(trip, new_entry):
         - Traveler: {new_entry.traveler.name}
         - Time: {new_entry.timestamp.strftime('%Y-%m-%d %H:%M')}
         
-        Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog. 
+        Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
         Consider the location if GPS is available, and comment meaningfully on the user's input.
         Do NOT regenerate the entire blog - just provide the new content to append.
-        Write in a friendly, travel blog style.
+        Write in a friendly, travel blog style in {language_name}.
         """
         
         response = model.generate_content(prompt)
@@ -161,12 +190,13 @@ def create_trip():
     data = request.get_json()
     name = data.get('name')
     description = data.get('description', '')
+    blog_language = data.get('blog_language', 'en')
     
     if not name:
         return jsonify({'error': 'Trip name is required'}), 400
     
     admin_token = generate_token()
-    trip = Trip(name=name, description=description, admin_token=admin_token)
+    trip = Trip(name=name, description=description, admin_token=admin_token, blog_language=blog_language)
     db.session.add(trip)
     db.session.commit()
     
@@ -174,6 +204,7 @@ def create_trip():
         'id': trip.id,
         'name': trip.name,
         'description': trip.description,
+        'blog_language': trip.blog_language,
         'admin_token': trip.admin_token,
         'created_at': trip.created_at.isoformat()
     })
@@ -189,6 +220,7 @@ def get_trips():
         'id': trip.id,
         'name': trip.name,
         'description': trip.description,
+        'blog_language': trip.blog_language,
         'created_at': trip.created_at.isoformat(),
         'traveler_count': len(trip.travelers),
         'entry_count': len(trip.entries)
@@ -196,7 +228,7 @@ def get_trips():
 
 @app.route('/api/admin/trips/<int:trip_id>/travelers', methods=['POST'])
 @jwt_required()
-def add_traveler():
+def add_traveler(trip_id):
     if get_jwt_identity() != 'admin':
         return jsonify({'error': 'Admin access required'}), 403
     
@@ -295,6 +327,7 @@ def get_blog(trip_id):
         'trip_name': trip.name,
         'description': trip.description,
         'blog_content': trip.blog_content,
+        'blog_language': trip.blog_language,
         'created_at': trip.created_at.isoformat()
     })
 
@@ -338,6 +371,27 @@ def regenerate_blog(trip_id):
     db.session.commit()
     return jsonify({'message': 'Blog regenerated successfully'})
 
+@app.route('/api/admin/trips/<int:trip_id>/language', methods=['PUT'])
+@jwt_required()
+def update_trip_language(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    data = request.get_json()
+    new_language = data.get('language')
+    
+    if not new_language:
+        return jsonify({'error': 'Language is required'}), 400
+    
+    trip.blog_language = new_language
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Language updated successfully',
+        'language': trip.blog_language
+    })
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -346,9 +400,32 @@ def uploaded_file(filename):
 def health():
     return jsonify({'status': 'healthy'})
 
+def migrate_database():
+    """Apply database migrations for new columns"""
+    try:
+        from sqlalchemy import inspect, text
+        
+        # Check if blog_language column exists
+        inspector = inspect(db.engine)
+        trip_columns = [col['name'] for col in inspector.get_columns('trip')]
+        
+        if 'blog_language' not in trip_columns:
+            print("🔄 Migrating database: Adding blog_language column...")
+            with db.engine.connect() as conn:
+                conn.execute(text('ALTER TABLE trip ADD COLUMN blog_language VARCHAR(10) DEFAULT "en"'))
+                conn.commit()
+            print("✅ Database migration completed!")
+        else:
+            print("✅ Database is up to date!")
+            
+    except Exception as e:
+        print(f"⚠️  Database migration error: {e}")
+        print("   This might be a new database - continuing...")
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        migrate_database()
     
     # Get configuration from environment
     host = os.getenv('FLASK_HOST', '0.0.0.0')
