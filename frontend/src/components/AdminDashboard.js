@@ -151,6 +151,64 @@ function AdminDashboard() {
     }
   };
 
+  const deleteTrip = async (tripId, tripName) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${tripName}"?\n\n` +
+      `This will permanently delete:\n` +
+      `- All travelers and their entries\n` +
+      `- All uploaded photos and audio files\n` +
+      `- The entire blog content\n\n` +
+      `This action cannot be undone!`
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await axios.delete(getApiUrl(`/api/admin/trips/${tripId}`), {
+        headers: getAuthHeaders()
+      });
+      setSuccess(`Trip "${tripName}" deleted successfully!`);
+      loadTrips(); // Refresh trips list
+      if (selectedTrip?.id === tripId) {
+        setSelectedTrip(null);
+        setTravelers([]);
+      }
+    } catch (err) {
+      setError('Failed to delete trip');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePublicAccess = async (tripId, currentEnabled) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await axios.put(
+        getApiUrl(`/api/admin/trips/${tripId}/public`),
+        { enabled: !currentEnabled },
+        { headers: getAuthHeaders() }
+      );
+      
+      const message = response.data.public_enabled 
+        ? `Public access enabled! Share this link: ${window.location.origin}/public/${response.data.public_token}`
+        : 'Public access disabled.';
+      
+      setSuccess(message);
+      loadTrips(); // Refresh trips list
+    } catch (err) {
+      setError('Failed to update public access');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin');
@@ -260,6 +318,33 @@ function AdminDashboard() {
                       >
                         Regenerate Blog
                       </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePublicAccess(trip.id, trip.public_enabled);
+                        }}
+                        className={`btn ${trip.public_enabled ? 'btn-secondary' : ''}`}
+                        style={{ 
+                          marginRight: '10px',
+                          backgroundColor: trip.public_enabled ? '#28a745' : '#6c757d',
+                          color: 'white'
+                        }}
+                      >
+                        {trip.public_enabled ? '🌐 Public' : '🔒 Private'}
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTrip(trip.id, trip.name);
+                        }}
+                        className="btn"
+                        style={{ 
+                          backgroundColor: '#dc3545',
+                          color: 'white'
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
                     </div>
                     <div style={{ marginTop: '10px', fontSize: '0.9em' }}>
                       <label style={{ marginRight: '10px' }}>Language:</label>
@@ -279,6 +364,47 @@ function AdminDashboard() {
                         ))}
                       </select>
                     </div>
+                    {trip.public_enabled && trip.public_token && (
+                      <div style={{ 
+                        marginTop: '10px', 
+                        fontSize: '0.85em', 
+                        backgroundColor: '#e8f5e8',
+                        padding: '8px',
+                        borderRadius: '4px',
+                        border: '1px solid #d4edda'
+                      }}>
+                        <strong>🌐 Public Link:</strong>
+                        <br />
+                        <a 
+                          href={`${window.location.origin}/public/${trip.public_token}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: '#155724', wordBreak: 'break-all' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {window.location.origin}/public/{trip.public_token}
+                        </a>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(`${window.location.origin}/public/${trip.public_token}`);
+                            setSuccess('Public link copied to clipboard!');
+                          }}
+                          style={{ 
+                            marginLeft: '8px', 
+                            fontSize: '0.8em', 
+                            padding: '2px 6px',
+                            backgroundColor: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '3px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

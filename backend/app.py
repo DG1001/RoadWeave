@@ -48,6 +48,8 @@ class Trip(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     blog_content = db.Column(db.Text, default='')
     blog_language = db.Column(db.String(10), default='en')  # Language code (en, es, fr, de, etc.)
+    public_enabled = db.Column(db.Boolean, default=False)  # Whether public access is enabled
+    public_token = db.Column(db.String(100), unique=True)  # Token for public access
     
     travelers = db.relationship('Traveler', backref='trip', lazy=True, cascade='all, delete-orphan')
     entries = db.relationship('Entry', backref='trip', lazy=True, cascade='all, delete-orphan')
@@ -380,6 +382,8 @@ def get_trips():
         'name': trip.name,
         'description': trip.description,
         'blog_language': trip.blog_language,
+        'public_enabled': trip.public_enabled,
+        'public_token': trip.public_token,
         'created_at': trip.created_at.isoformat(),
         'traveler_count': len(trip.travelers),
         'entry_count': len(trip.entries)
@@ -552,6 +556,86 @@ def update_trip_language(trip_id):
         'language': trip.blog_language
     })
 
+@app.route('/api/admin/trips/<int:trip_id>', methods=['DELETE'])
+@jwt_required()
+def delete_trip(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    
+    # Delete associated files
+    for entry in trip.entries:
+        if entry.filename:
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], entry.filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+    
+    db.session.delete(trip)
+    db.session.commit()
+    
+    return jsonify({'message': 'Trip deleted successfully'})
+
+@app.route('/api/admin/trips/<int:trip_id>/public', methods=['PUT'])
+@jwt_required()
+def toggle_public_access(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    data = request.get_json()
+    enabled = data.get('enabled', False)
+    
+    trip.public_enabled = enabled
+    if enabled and not trip.public_token:
+        trip.public_token = generate_token()
+    elif not enabled:
+        trip.public_token = None
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Public access updated successfully',
+        'public_enabled': trip.public_enabled,
+        'public_token': trip.public_token
+    })
+
+@app.route('/api/public/<token>')
+def get_public_blog(token):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    return jsonify({
+        'trip_name': trip.name,
+        'description': trip.description,
+        'blog_content': trip.blog_content,
+        'blog_language': trip.blog_language,
+        'created_at': trip.created_at.isoformat()
+    })
+
+@app.route('/api/public/<token>/entries')
+def get_public_entries(token):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    # Only return entries with location data for the map
+    entries = Entry.query.filter_by(trip_id=trip.id).filter(
+        Entry.latitude.isnot(None), 
+        Entry.longitude.isnot(None)
+    ).order_by(Entry.timestamp.desc()).all()
+    
+    return jsonify([{
+        'id': entry.id,
+        'content_type': entry.content_type,
+        'latitude': entry.latitude,
+        'longitude': entry.longitude,
+        'timestamp': entry.timestamp.isoformat(),
+        'traveler_name': entry.traveler.name,
+        'filename': entry.filename
+    } for entry in entries])
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -565,14 +649,23 @@ def migrate_database():
     try:
         from sqlalchemy import inspect, text
         
-        # Check if blog_language column exists
+        # Check if columns exist
         inspector = inspect(db.engine)
         trip_columns = [col['name'] for col in inspector.get_columns('trip')]
         
+        migrations_needed = []
         if 'blog_language' not in trip_columns:
-            print("🔄 Migrating database: Adding blog_language column...")
+            migrations_needed.append('ALTER TABLE trip ADD COLUMN blog_language VARCHAR(10) DEFAULT "en"')
+        if 'public_enabled' not in trip_columns:
+            migrations_needed.append('ALTER TABLE trip ADD COLUMN public_enabled BOOLEAN DEFAULT 0')
+        if 'public_token' not in trip_columns:
+            migrations_needed.append('ALTER TABLE trip ADD COLUMN public_token VARCHAR(100)')
+        
+        if migrations_needed:
+            print(f"🔄 Migrating database: Adding {len(migrations_needed)} column(s)...")
             with db.engine.connect() as conn:
-                conn.execute(text('ALTER TABLE trip ADD COLUMN blog_language VARCHAR(10) DEFAULT "en"'))
+                for migration in migrations_needed:
+                    conn.execute(text(migration))
                 conn.commit()
             print("✅ Database migration completed!")
         else:

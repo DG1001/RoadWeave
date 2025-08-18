@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import AdminDashboard from './components/AdminDashboard';
 import TravelerPWA from './components/TravelerPWA';
 import BlogView from './components/BlogView';
+import PublicBlogView from './components/PublicBlogView';
 import AdminLogin from './components/AdminLogin';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/traveler/:token" element={<TravelerPWA />} />
           <Route path="/blog/:tripId" element={<BlogView />} />
+          <Route path="/public/:token" element={<PublicBlogView />} />
         </Routes>
       </div>
     </Router>
