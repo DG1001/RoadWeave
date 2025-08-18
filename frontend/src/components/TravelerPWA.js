@@ -11,6 +11,7 @@ function TravelerPWA() {
   const [success, setSuccess] = useState('');
   const [location, setLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
+  const [updatingLocation, setUpdatingLocation] = useState(false);
   
   // Form states
   const [entryType, setEntryType] = useState('text');
@@ -120,12 +121,42 @@ function TravelerPWA() {
     setError('');
     setSuccess('');
 
+    // Get current location for this entry
+    let currentLocation = location;
+    if (navigator.geolocation) {
+      setUpdatingLocation(true);
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 60000 // Accept location up to 1 minute old
+            }
+          );
+        });
+        currentLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        // Update state for next time
+        setLocation(currentLocation);
+      } catch (error) {
+        console.warn('Could not get current location, using last known location:', error);
+        // Continue with existing location or no location
+      } finally {
+        setUpdatingLocation(false);
+      }
+    }
+
     const formData = new FormData();
     formData.append('content_type', entryType);
     
-    if (location) {
-      formData.append('latitude', location.latitude);
-      formData.append('longitude', location.longitude);
+    if (currentLocation) {
+      formData.append('latitude', currentLocation.latitude);
+      formData.append('longitude', currentLocation.longitude);
     }
 
     if (entryType === 'text') {
@@ -211,10 +242,17 @@ function TravelerPWA() {
           <h3>Location Status</h3>
           {locationLoading ? (
             <p>Getting your location...</p>
+          ) : updatingLocation ? (
+            <p style={{ color: '#007bff' }}>📍 Updating location for entry...</p>
           ) : location ? (
-            <p style={{ color: '#28a745' }}>
-              ✓ Location captured: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
-            </p>
+            <div>
+              <p style={{ color: '#28a745' }}>
+                ✓ Location captured: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+              </p>
+              <p style={{ fontSize: '0.9em', color: '#666', margin: '5px 0 0 0' }}>
+                📍 Fresh location will be captured when you share an entry
+              </p>
+            </div>
           ) : (
             <div>
               <p style={{ color: '#dc3545' }}>⚠ Location not available</p>
@@ -423,10 +461,10 @@ function TravelerPWA() {
             <button 
               type="submit" 
               className="btn" 
-              disabled={loading}
+              disabled={loading || updatingLocation}
               style={{ width: '100%', marginTop: '20px' }}
             >
-              {loading ? 'Submitting...' : 'Share Entry'}
+              {updatingLocation ? '📍 Getting location...' : loading ? 'Submitting...' : 'Share Entry'}
             </button>
           </form>
         </div>
@@ -436,6 +474,7 @@ function TravelerPWA() {
           <h3>Tips</h3>
           <ul>
             <li>Allow location access for the best experience</li>
+            <li>Fresh GPS coordinates are captured each time you share an entry</li>
             <li>Your entries will be added to the trip blog automatically</li>
             <li>The app works offline - entries will be submitted when you reconnect</li>
             <li>For photos, try to capture interesting moments and places</li>
