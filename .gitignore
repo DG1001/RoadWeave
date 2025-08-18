@@ -10,8 +10,11 @@ __pycache__/
 .Python
 
 # Environment variables
+.env
 .env.local
 .env.production
+backend/.env
+frontend/.env
 
 # IDE files (keep .vscode for project settings)
 .idea/
