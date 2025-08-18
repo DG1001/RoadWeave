@@ -33,3 +33,4 @@ prompt.md
 frontend/node_modules/
 frontend/package-lock.json
 backend/uploads/
+frontend/build/
