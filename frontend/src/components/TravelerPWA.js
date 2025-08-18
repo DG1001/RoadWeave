@@ -237,7 +237,7 @@ function TravelerPWA() {
                     onChange={(e) => setEntryType(e.target.value)}
                     style={{ marginRight: '8px' }}
                   />
-                  📝 Text
+                  📝
                 </label>
                 <label style={{ 
                   display: 'flex', 
@@ -253,7 +253,7 @@ function TravelerPWA() {
                     onChange={(e) => setEntryType(e.target.value)}
                     style={{ marginRight: '8px' }}
                   />
-                  📷 Photo
+                  📷
                 </label>
                 <label style={{ 
                   display: 'flex', 
@@ -269,7 +269,7 @@ function TravelerPWA() {
                     onChange={(e) => setEntryType(e.target.value)}
                     style={{ marginRight: '8px' }}
                   />
-                  🎤 Voice
+                  🎤
                 </label>
               </div>
             </div>
