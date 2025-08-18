@@ -628,11 +628,8 @@ def get_public_entries(token):
     if not trip:
         return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
     
-    # Only return entries with location data for the map
-    entries = Entry.query.filter_by(trip_id=trip.id).filter(
-        Entry.latitude.isnot(None), 
-        Entry.longitude.isnot(None)
-    ).order_by(Entry.timestamp.desc()).all()
+    # Return all entries for blog content rendering, but include location info for mapping
+    entries = Entry.query.filter_by(trip_id=trip.id).order_by(Entry.timestamp.desc()).all()
     
     return jsonify([{
         'id': entry.id,
