@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+import { getApiUrl } from '../config/api';
 
 function AdminLogin() {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -23,7 +22,7 @@ function AdminLogin() {
     setError('');
 
     try {
-      const response = await axios.post(`${API_BASE}/api/admin/login`, credentials);
+      const response = await axios.post(getApiUrl('/api/admin/login'), credentials);
       localStorage.setItem('adminToken', response.data.token);
       navigate('/admin/dashboard');
     } catch (err) {
@@ -68,11 +67,6 @@ function AdminLogin() {
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
-          <div style={{ marginTop: '20px', fontSize: '0.9em', color: '#666' }}>
-            <p>Default credentials:</p>
-            <p>Username: admin</p>
-            <p>Password: password123</p>
-          </div>
         </div>
       </div>
     </div>

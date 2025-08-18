@@ -4,8 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
 import 'leaflet/dist/leaflet.css';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+import { getApiUrl } from '../config/api';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -53,7 +52,7 @@ function BlogView() {
 
   const loadBlogData = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/trips/${tripId}/blog`);
+      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/blog`));
       setBlog(response.data);
     } catch (err) {
       setError('Failed to load blog data');
@@ -62,7 +61,7 @@ function BlogView() {
 
   const loadEntries = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/trips/${tripId}/entries`);
+      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/entries`));
       const entriesData = response.data;
       setEntries(entriesData);
       
@@ -103,7 +102,7 @@ function BlogView() {
   };
 
   const getFileUrl = (filename) => {
-    return `${API_BASE}/uploads/${filename}`;
+    return getApiUrl(`/uploads/${filename}`);
   };
 
   if (loading) {

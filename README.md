@@ -31,6 +31,35 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
 - **PWA** - Progressive Web App capabilities
 - **Service Worker** - Offline functionality
 
+## Quick Start
+
+1. **Configure backend**:
+   ```bash
+   cd backend
+   cp .env.example .env
+   # Edit .env and set GEMINI_API_KEY (required)
+   pip install -r requirements.txt
+   ```
+
+2. **Configure frontend**:
+   ```bash
+   cd frontend
+   cp .env.example .env
+   # Edit .env and set REACT_APP_API_BASE to your backend URL
+   npm install
+   ```
+
+3. **Start servers**:
+   ```bash
+   # Terminal 1 - Backend
+   cd backend && python app.py
+   
+   # Terminal 2 - Frontend  
+   cd frontend && npm start
+   ```
+
+4. **Access**: Admin at `http://localhost:3000/admin` (credentials in backend console)
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -57,24 +86,23 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
    pip install -r requirements.txt
    ```
 
-4. **Set environment variables:**
+4. **Configure environment variables:**
    ```bash
-   export SECRET_KEY="your-secret-key-here"
-   export JWT_SECRET_KEY="your-jwt-secret-here"
-   export GEMINI_API_KEY="your-gemini-api-key-here"
+   cp .env.example .env
+   # Edit .env and set your API keys and configuration
    ```
    
-   Or create a `.env` file:
+   **Required:** Set your Google Gemini API key in `.env`:
    ```
-   SECRET_KEY=your-secret-key-here
-   JWT_SECRET_KEY=your-jwt-secret-here
-   GEMINI_API_KEY=your-gemini-api-key-here
+   GEMINI_API_KEY=your-actual-gemini-api-key-here
    ```
 
 5. **Run the Flask application:**
    ```bash
    python app.py
    ```
+   
+   **Note:** Admin credentials will be displayed in the console on first startup.
    
    The backend will be available at `http://localhost:5000`
 
@@ -90,10 +118,22 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
    npm install
    ```
 
-3. **Set API base URL (optional):**
-   Create `.env` file in frontend directory:
+3. **Configure API endpoint:**
+   Create `.env` file in frontend directory (copy from .env.example):
+   ```bash
+   cp .env.example .env
    ```
+   
+   Edit `.env` to set your backend URL:
+   ```
+   # For local development (default)
    REACT_APP_API_BASE=http://localhost:5000
+   
+   # For production deployment
+   REACT_APP_API_BASE=https://your-domain.com
+   
+   # For network access (replace with your IP)
+   REACT_APP_API_BASE=http://192.168.1.100:5000
    ```
 
 4. **Start the development server:**
@@ -120,7 +160,8 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
 
 1. **Login to Admin Dashboard:**
    - Go to `http://localhost:3000/admin`
-   - Use credentials: `admin` / `password123`
+   - Use credentials displayed in backend server console
+   - Default username: `admin`
 
 2. **Create a Trip:**
    - Enter trip name and description
@@ -225,17 +266,73 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
 
 **Backend (.env):**
 ```
+# Required
+GEMINI_API_KEY=your-google-gemini-api-key
+
+# Security (recommended to change in production)
 SECRET_KEY=your-flask-secret-key
 JWT_SECRET_KEY=your-jwt-secret-key
-GEMINI_API_KEY=your-google-gemini-api-key
+
+# Admin User (optional - if not set, random password generated)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-secure-admin-password
+
+# Database and uploads (optional)
 SQLALCHEMY_DATABASE_URI=sqlite:///roadweave.db
 UPLOAD_FOLDER=uploads
 MAX_CONTENT_LENGTH=16777216
+
+# Server configuration (optional)
+FLASK_HOST=0.0.0.0
+FLASK_PORT=5000
+FLASK_DEBUG=True
 ```
 
 **Frontend (.env):**
 ```
+# Required: Backend API URL
 REACT_APP_API_BASE=http://localhost:5000
+
+# Common configurations:
+# Local development: http://localhost:5000
+# Network access: http://192.168.1.100:5000  
+# Production: https://api.yourdomain.com
+# Docker: http://backend:5000
+```
+
+### Deployment Configuration Examples
+
+**Local Network Access:**
+If you want to access the app from other devices on your network:
+1. Start backend with: `python app.py` (binds to 0.0.0.0:5000)
+2. Find your IP: `ip addr show` or `ifconfig`
+3. Set frontend `.env`: `REACT_APP_API_BASE=http://YOUR_IP:5000`
+4. Access from any device: `http://YOUR_IP:3000`
+
+**Docker Deployment:**
+```yaml
+# docker-compose.yml example
+version: '3'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_BASE=http://backend:5000
+```
+
+**Production Deployment:**
+```bash
+# Build React app for production
+cd frontend
+REACT_APP_API_BASE=https://api.yourdomain.com npm run build
+
+# Serve with nginx, Apache, or Flask
 ```
 
 ### Security Notes

@@ -6,20 +6,25 @@ import os
 import uuid
 from datetime import datetime, timedelta
 import secrets
+import string
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
 import json
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///roadweave.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///roadweave.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max file size
 
 # Create uploads directory
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -63,9 +68,35 @@ class Entry(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     filename = db.Column(db.String(255))  # For uploaded files
 
-# Admin credentials (hardcoded for MVP)
-ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'password123'
+def generate_random_password(length=12):
+    """Generate a secure random password"""
+    characters = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(characters) for _ in range(length))
+
+def setup_admin_credentials():
+    """Setup admin credentials from environment or generate random password"""
+    username = os.getenv('ADMIN_USERNAME', 'admin')
+    password = os.getenv('ADMIN_PASSWORD')
+    
+    if not password:
+        # Generate random password if not set in environment
+        password = generate_random_password()
+        print("=" * 60)
+        print("🔐 ADMIN CREDENTIALS")
+        print("=" * 60)
+        print(f"Username: {username}")
+        print(f"Password: {password}")
+        print("=" * 60)
+        print("⚠️  SAVE THESE CREDENTIALS - Password is randomly generated!")
+        print("   Set ADMIN_PASSWORD in .env to use a custom password.")
+        print("=" * 60)
+    else:
+        print(f"✅ Using admin credentials from environment (username: {username})")
+    
+    return username, password
+
+# Setup admin credentials
+ADMIN_USERNAME, ADMIN_PASSWORD = setup_admin_credentials()
 
 def generate_token():
     return secrets.token_urlsafe(32)
@@ -318,4 +349,16 @@ def health():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    
+    # Get configuration from environment
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    port = int(os.getenv('FLASK_PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
+    
+    print(f"🚀 Starting RoadWeave backend server...")
+    print(f"   Host: {host}")
+    print(f"   Port: {port}")
+    print(f"   Debug: {debug}")
+    print(f"   API Base: http://{host}:{port}")
+    
+    app.run(debug=debug, host=host, port=port)

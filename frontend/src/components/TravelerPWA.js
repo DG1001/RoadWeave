@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+import { getApiUrl } from '../config/api';
 
 function TravelerPWA() {
   const { token } = useParams();
@@ -31,7 +30,7 @@ function TravelerPWA() {
 
   const verifyToken = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/traveler/verify/${token}`);
+      const response = await axios.get(getApiUrl(`/api/traveler/verify/${token}`));
       setTraveler(response.data.traveler);
     } catch (err) {
       setError('Invalid or expired link');
@@ -133,7 +132,7 @@ function TravelerPWA() {
     }
 
     try {
-      await axios.post(`${API_BASE}/api/traveler/${token}/entries`, formData, {
+      await axios.post(getApiUrl(`/api/traveler/${token}/entries`), formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

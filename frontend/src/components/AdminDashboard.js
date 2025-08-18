@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+import { getApiUrl, getAuthHeaders } from '../config/api';
 
 function AdminDashboard() {
   const [trips, setTrips] = useState([]);
@@ -24,13 +23,10 @@ function AdminDashboard() {
     loadTrips();
   }, [navigate]);
 
-  const getAuthHeaders = () => ({
-    Authorization: `Bearer ${localStorage.getItem('adminToken')}`
-  });
 
   const loadTrips = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/admin/trips`, {
+      const response = await axios.get(getApiUrl('/api/admin/trips'), {
         headers: getAuthHeaders()
       });
       setTrips(response.data);
@@ -46,7 +42,7 @@ function AdminDashboard() {
 
   const loadTravelers = async (tripId) => {
     try {
-      const response = await axios.get(`${API_BASE}/api/trips/${tripId}/travelers`);
+      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/travelers`));
       setTravelers(response.data);
     } catch (err) {
       setError('Failed to load travelers');
@@ -60,7 +56,7 @@ function AdminDashboard() {
     setSuccess('');
 
     try {
-      await axios.post(`${API_BASE}/api/admin/trips`, newTrip, {
+      await axios.post(getApiUrl('/api/admin/trips'), newTrip, {
         headers: getAuthHeaders()
       });
       setNewTrip({ name: '', description: '' });
@@ -83,7 +79,7 @@ function AdminDashboard() {
 
     try {
       const response = await axios.post(
-        `${API_BASE}/api/admin/trips/${selectedTrip.id}/travelers`,
+        getApiUrl(`/api/admin/trips/${selectedTrip.id}/travelers`),
         newTraveler,
         { headers: getAuthHeaders() }
       );
@@ -103,7 +99,7 @@ function AdminDashboard() {
     setSuccess('');
 
     try {
-      await axios.post(`${API_BASE}/api/admin/trips/${tripId}/regenerate-blog`, {}, {
+      await axios.post(getApiUrl(`/api/admin/trips/${tripId}/regenerate-blog`), {}, {
         headers: getAuthHeaders()
       });
       setSuccess('Blog regenerated successfully!');
