@@ -81,96 +81,125 @@ function BlogView() {
   const renderBlogContent = (content) => {
     if (!content) return <p>No blog content generated yet.</p>;
     
-    // Simple markdown-like rendering with image integration
-    const lines = content.split('\n');
-    const elements = [];
+    // Create a mapping of photo entries by ID for quick lookup
+    const photoEntriesById = {};
+    entries.filter(entry => entry.content_type === 'photo' && entry.filename)
+      .forEach(entry => {
+        photoEntriesById[entry.id] = entry;
+      });
     
-    // Get photo entries for inline display
-    const photoEntries = entries.filter(entry => entry.content_type === 'photo' && entry.filename);
+    // Process content and replace photo markers
+    const elements = [];
+    const usedPhotoIds = new Set();
+    
+    // Split content into lines and process
+    const lines = content.split('\n');
     
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      let line = lines[i];
       
-      if (line.startsWith('# ')) {
-        elements.push(<h1 key={`line-${i}`}>{line.substring(2)}</h1>);
-      } else if (line.startsWith('## ')) {
-        elements.push(<h2 key={`line-${i}`}>{line.substring(3)}</h2>);
-      } else if (line.startsWith('### ')) {
-        elements.push(<h3 key={`line-${i}`}>{line.substring(4)}</h3>);
-      } else if (line.trim() === '') {
-        elements.push(<br key={`line-${i}`} />);
-      } else {
-        elements.push(<p key={`line-${i}`}>{line}</p>);
+      // Check for photo markers in the line
+      const photoMarkerRegex = /\[PHOTO:(\d+)\]/g;
+      const matches = [...line.matchAll(photoMarkerRegex)];
+      
+      if (matches.length > 0) {
+        // Split line by photo markers and insert photos
+        let lastIndex = 0;
+        let lineElements = [];
         
-        // Check if this paragraph mentions a photo and insert it
-        const photoEntry = photoEntries.find(entry => {
-          const lineLower = line.toLowerCase();
-          const travelerName = entry.traveler_name.toLowerCase();
+        matches.forEach((match, matchIndex) => {
+          const [fullMatch, entryId] = match;
+          const photoEntry = photoEntriesById[parseInt(entryId)];
           
-          // Match by traveler name
-          if (lineLower.includes(travelerName)) return true;
-          
-          // Match by user comment keywords
-          if (entry.content && entry.content !== 'Photo upload') {
-            const commentWords = entry.content.toLowerCase().split(' ').filter(word => word.length > 3);
-            return commentWords.some(word => lineLower.includes(word));
+          // Add text before the marker
+          if (match.index > lastIndex) {
+            const textBefore = line.substring(lastIndex, match.index);
+            if (textBefore.trim()) {
+              lineElements.push(textBefore);
+            }
           }
           
-          // Match by timestamp proximity (if paragraph mentions time/date)
-          const entryTime = new Date(entry.timestamp);
-          const timeKeywords = ['morning', 'afternoon', 'evening', 'sunset', 'sunrise', 'today', 'yesterday'];
-          if (timeKeywords.some(keyword => lineLower.includes(keyword))) {
-            return true;
+          // Add the photo if it exists
+          if (photoEntry) {
+            usedPhotoIds.add(photoEntry.id);
+            elements.push(
+              ...lineElements.map((text, idx) => (
+                <p key={`line-${i}-text-${idx}`}>{text}</p>
+              ))
+            );
+            lineElements = []; // Reset line elements
+            
+            elements.push(
+              <div key={`photo-${photoEntry.id}`} style={{ 
+                margin: '15px 0', 
+                textAlign: 'center',
+                padding: '10px',
+                backgroundColor: '#f9f9f9',
+                borderRadius: '8px',
+                border: '1px solid #e0e0e0'
+              }}>
+                <img
+                  src={getFileUrl(photoEntry.filename)}
+                  alt={`Photo by ${photoEntry.traveler_name}`}
+                  style={{ 
+                    maxWidth: '100%', 
+                    height: 'auto', 
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}
+                />
+                <div style={{ 
+                  marginTop: '8px', 
+                  fontSize: '0.9em', 
+                  color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+                  {photoEntry.content && photoEntry.content !== 'Photo upload' && (
+                    <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                      "{photoEntry.content}"
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
           }
           
-          return false;
+          lastIndex = match.index + fullMatch.length;
         });
         
-        if (photoEntry && !elements.some(el => el.key === `photo-${photoEntry.id}`)) {
-          elements.push(
-            <div key={`photo-${photoEntry.id}`} style={{ 
-              margin: '15px 0', 
-              textAlign: 'center',
-              padding: '10px',
-              backgroundColor: '#f9f9f9',
-              borderRadius: '8px',
-              border: '1px solid #e0e0e0'
-            }}>
-              <img
-                src={getFileUrl(photoEntry.filename)}
-                alt={`Photo by ${photoEntry.traveler_name}`}
-                style={{ 
-                  maxWidth: '100%', 
-                  height: 'auto', 
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}
-              />
-              <div style={{ 
-                marginTop: '8px', 
-                fontSize: '0.9em', 
-                color: '#666',
-                fontStyle: 'italic'
-              }}>
-                📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
-                {photoEntry.content && photoEntry.content !== 'Photo upload' && (
-                  <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
-                    "{photoEntry.content}"
-                  </div>
-                )}
-              </div>
-            </div>
-          );
+        // Add remaining text after last marker
+        if (lastIndex < line.length) {
+          const textAfter = line.substring(lastIndex);
+          if (textAfter.trim()) {
+            lineElements.push(textAfter);
+          }
+        }
+        
+        // Add any remaining line elements
+        lineElements.forEach((text, idx) => {
+          if (text.trim()) {
+            elements.push(<p key={`line-${i}-text-final-${idx}`}>{text}</p>);
+          }
+        });
+      } else {
+        // No photo markers, process as normal markdown
+        if (line.startsWith('# ')) {
+          elements.push(<h1 key={`line-${i}`}>{line.substring(2)}</h1>);
+        } else if (line.startsWith('## ')) {
+          elements.push(<h2 key={`line-${i}`}>{line.substring(3)}</h2>);
+        } else if (line.startsWith('### ')) {
+          elements.push(<h3 key={`line-${i}`}>{line.substring(4)}</h3>);
+        } else if (line.trim() === '') {
+          elements.push(<br key={`line-${i}`} />);
+        } else {
+          elements.push(<p key={`line-${i}`}>{line}</p>);
         }
       }
     }
     
-    // Add any remaining photos that weren't matched to blog content
-    const usedPhotoIds = elements
-      .filter(el => el.key && el.key.startsWith('photo-'))
-      .map(el => parseInt(el.key.replace('photo-', '')));
-    
-    const remainingPhotos = photoEntries.filter(entry => !usedPhotoIds.includes(entry.id));
+    // Add any remaining photos that weren't used by markers
+    const remainingPhotos = Object.values(photoEntriesById).filter(entry => !usedPhotoIds.has(entry.id));
     
     if (remainingPhotos.length > 0) {
       elements.push(<h3 key="more-photos">📷 More Photos</h3>);

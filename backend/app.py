@@ -290,6 +290,13 @@ def generate_blog_update(trip, new_entry):
             if new_entry.content and new_entry.content != "Photo upload":
                 content_description += f"\nUser Comment: {new_entry.content}"
         
+        # Prepare photo placement instruction
+        photo_instruction = ""
+        if new_entry.content_type == 'photo' and new_entry.filename:
+            photo_instruction = f"""
+        IMPORTANT: Include the photo placement marker [PHOTO:{new_entry.id}] at the appropriate place in your text where the photo should appear. This marker will be replaced with the actual photo.
+        """
+        
         prompt = f"""
         You are helping to incrementally update a travel blog for a trip called "{trip.name}".
         
@@ -299,6 +306,7 @@ def generate_blog_update(trip, new_entry):
         {existing_blog}
         
         New entry details:
+        - Entry ID: {new_entry.id}
         - Type: {new_entry.content_type}
         - Content: {content_description}
         - Location: {location_info}
@@ -310,6 +318,7 @@ def generate_blog_update(trip, new_entry):
         Consider the location if GPS is available, and comment meaningfully on the user's input.
         Do NOT regenerate the entire blog - just provide the new content to append.
         Write in a friendly, travel blog style in {language_name}.
+        {photo_instruction}
         """
         
         response = model.generate_content(prompt)
