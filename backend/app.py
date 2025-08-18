@@ -4,7 +4,7 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 from flask_cors import CORS
 import os
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import secrets
 import string
 import google.generativeai as genai
@@ -105,6 +105,35 @@ ADMIN_USERNAME, ADMIN_PASSWORD = setup_admin_credentials()
 def generate_token():
     return secrets.token_urlsafe(32)
 
+# Simple daily usage tracking (in-memory for MVP)
+daily_usage_tracker = {}
+
+def check_daily_limit():
+    """Check if daily photo analysis limit has been reached"""
+    daily_limit = int(os.getenv('DAILY_PHOTO_ANALYSIS_LIMIT', 0))
+    if daily_limit <= 0:
+        return True  # No limit set
+    
+    today = date.today().isoformat()
+    current_count = daily_usage_tracker.get(today, 0)
+    
+    if current_count >= daily_limit:
+        print(f"⚠️  Daily photo analysis limit reached: {current_count}/{daily_limit}")
+        return False
+    
+    return True
+
+def increment_daily_usage():
+    """Increment daily usage counter"""
+    today = date.today().isoformat()
+    daily_usage_tracker[today] = daily_usage_tracker.get(today, 0) + 1
+    
+    # Clean up old entries (keep only last 7 days)
+    cutoff_date = (date.today() - timedelta(days=7)).isoformat()
+    keys_to_remove = [k for k in daily_usage_tracker.keys() if k < cutoff_date]
+    for key in keys_to_remove:
+        del daily_usage_tracker[key]
+
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp3', 'wav', 'ogg', 'webm'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -115,7 +144,7 @@ def is_image_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in IMAGE_EXTENSIONS
 
 def analyze_image_with_ai(image_path, user_comment=""):
-    """Analyze image using Gemini Vision API"""
+    """Analyze image using Gemini Vision API with cost tracking"""
     try:
         # Read and prepare image
         with open(image_path, 'rb') as img_file:
@@ -123,11 +152,15 @@ def analyze_image_with_ai(image_path, user_comment=""):
         
         # Convert to PIL Image for processing
         image = Image.open(io.BytesIO(image_data))
+        original_size = image.size
         
-        # Resize if too large (Gemini has size limits)
-        max_size = (1024, 1024)
+        # Resize if too large (Gemini has size limits and cost optimization)
+        max_image_size = int(os.getenv('MAX_IMAGE_SIZE', 1024))
+        max_size = (max_image_size, max_image_size)
+        resized = False
         if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
             image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            resized = True
             
             # Save resized image to bytes
             img_byte_arr = io.BytesIO()
@@ -135,8 +168,22 @@ def analyze_image_with_ai(image_path, user_comment=""):
             image.save(img_byte_arr, format=format)
             image_data = img_byte_arr.getvalue()
         
-        # Use Gemini vision model
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        # Calculate estimated token usage (1290 tokens for 1024x1024)
+        final_size = image.size
+        estimated_tokens = int((final_size[0] * final_size[1] / (1024 * 1024)) * 1290)
+        estimated_input_cost = estimated_tokens * (0.10 / 1000000)  # $0.10 per 1M tokens
+        
+        # Log cost information (if enabled)
+        log_costs = os.getenv('PHOTO_ANALYSIS_LOG_COSTS', 'true').lower() == 'true'
+        if log_costs:
+            print(f"💰 Photo Analysis Cost Estimate:")
+            print(f"   Original size: {original_size[0]}x{original_size[1]} {'(resized)' if resized else ''}")
+            print(f"   Final size: {final_size[0]}x{final_size[1]}")
+            print(f"   Estimated tokens: {estimated_tokens}")
+            print(f"   Estimated input cost: ${estimated_input_cost:.6f}")
+        
+        # Use Gemini vision model (stable version)
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Prepare the image for Gemini
         image_part = {
@@ -162,10 +209,22 @@ def analyze_image_with_ai(image_path, user_comment=""):
         """
         
         response = model.generate_content([prompt, image_part])
+        
+        # Estimate output cost
+        output_length = len(response.text.split())
+        estimated_output_tokens = output_length * 1.3  # Rough estimate
+        estimated_output_cost = estimated_output_tokens * (0.40 / 1000000)  # $0.40 per 1M tokens
+        total_estimated_cost = estimated_input_cost + estimated_output_cost
+        
+        if log_costs:
+            print(f"   Estimated output tokens: {estimated_output_tokens:.0f}")
+            print(f"   Estimated output cost: ${estimated_output_cost:.6f}")
+            print(f"   Total estimated cost: ${total_estimated_cost:.6f}")
+        
         return response.text.strip()
         
     except Exception as e:
-        print(f"Image analysis error: {e}")
+        print(f"❌ Image analysis error: {e}")
         return f"A photo was shared{f': {user_comment}' if user_comment else '.'}"
 
 # Language code to language name mapping
@@ -194,7 +253,7 @@ LANGUAGE_NAMES = {
 # AI Integration
 def generate_blog_update(trip, new_entry):
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Prepare context
         existing_blog = trip.blog_content or "This is the beginning of a travel blog."
@@ -210,9 +269,17 @@ def generate_blog_update(trip, new_entry):
         if photo_analysis_enabled and new_entry.content_type == 'photo' and new_entry.filename:
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_entry.filename)
             if os.path.exists(image_path) and is_image_file(new_entry.filename):
-                print(f"📸 Analyzing image: {new_entry.filename}")
-                photo_analysis = analyze_image_with_ai(image_path, new_entry.content)
-                print(f"🤖 Photo analysis result: {photo_analysis}")
+                # Check daily limit before proceeding
+                if check_daily_limit():
+                    print(f"📸 Analyzing image: {new_entry.filename}")
+                    photo_analysis = analyze_image_with_ai(image_path, new_entry.content)
+                    increment_daily_usage()
+                    print(f"🤖 Photo analysis result: {photo_analysis}")
+                else:
+                    print("📸 Daily photo analysis limit reached - skipping analysis")
+                    photo_analysis = f"Photo shared by {new_entry.traveler.name}"
+                    if new_entry.content and new_entry.content != "Photo upload":
+                        photo_analysis += f": {new_entry.content}"
         elif not photo_analysis_enabled and new_entry.content_type == 'photo':
             print("📸 Photo analysis disabled by configuration")
         
@@ -518,6 +585,7 @@ if __name__ == '__main__':
     
     # Check photo analysis configuration
     photo_analysis_enabled = os.getenv('ENABLE_PHOTO_ANALYSIS', 'false').lower() == 'true'
+    daily_limit = int(os.getenv('DAILY_PHOTO_ANALYSIS_LIMIT', 0))
     
     print(f"🚀 Starting RoadWeave backend server...")
     print(f"   Host: {host}")
@@ -525,7 +593,16 @@ if __name__ == '__main__':
     print(f"   Debug: {debug}")
     print(f"   API Base: http://{host}:{port}")
     print(f"   📸 Photo Analysis: {'✅ Enabled' if photo_analysis_enabled else '❌ Disabled'}")
-    if not photo_analysis_enabled:
+    if photo_analysis_enabled:
+        if daily_limit > 0:
+            print(f"      Daily limit: {daily_limit} photos")
+        else:
+            print(f"      Daily limit: Unlimited")
+        max_size = int(os.getenv('MAX_IMAGE_SIZE', 1024))
+        print(f"      Max image size: {max_size}×{max_size}px")
+        log_costs = os.getenv('PHOTO_ANALYSIS_LOG_COSTS', 'true').lower() == 'true'
+        print(f"      Cost logging: {'✅ Enabled' if log_costs else '❌ Disabled'}")
+    else:
         print(f"      Set ENABLE_PHOTO_ANALYSIS=true in .env to enable AI photo analysis")
     
     app.run(debug=debug, host=host, port=port)

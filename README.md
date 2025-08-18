@@ -227,7 +227,33 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
 - **Contextual Placement**: Photos appear inline with related blog paragraphs
 - **Multi-language Support**: Analysis and descriptions in selected blog language
 - **Configurable Feature**: Enable/disable via `ENABLE_PHOTO_ANALYSIS=true` in backend `.env`
+- **Cost Optimization**: Configurable image resizing and cost logging
 - **Graceful Fallback**: Continues working if analysis fails or is disabled
+
+### Photo Analysis Costs
+
+**Gemini 2.0 Flash Pricing (per photo analysis):**
+- **Input Cost**: ~$0.00013 per 1024×1024 image (~1,290 tokens)
+- **Output Cost**: ~$0.00008 per description (~200 tokens)
+- **Total Cost**: **~$0.0002 per photo** (less than 2 cents per 100 photos)
+
+**Usage Examples:**
+- **10 photos/day**: ~$0.002/day ($0.60/year)
+- **100 photos/day**: ~$0.02/day ($7.30/year)  
+- **1,000 photos/day**: ~$0.20/day ($73/year)
+
+**Cost Controls:**
+- `MAX_IMAGE_SIZE=1024` - Controls token usage by limiting image size
+- `PHOTO_ANALYSIS_LOG_COSTS=true` - Shows cost estimates in server logs
+- `DAILY_PHOTO_ANALYSIS_LIMIT=100` - Sets daily analysis limit (0 = unlimited)
+- `ENABLE_PHOTO_ANALYSIS=false` - Completely disables feature to avoid costs
+- **Free Tier**: Available for development and testing
+
+**Usage Monitoring:**
+- Real-time cost estimates shown in server logs
+- Daily usage tracking with automatic cleanup
+- Graceful fallback when limits are reached (uses user comments instead)
+- Startup logging shows all configuration settings
 
 ## API Endpoints
 
@@ -310,6 +336,10 @@ ADMIN_PASSWORD=your-secure-admin-password
 
 # AI Photo Analysis (optional - requires Gemini API key)
 ENABLE_PHOTO_ANALYSIS=true
+
+# Photo Analysis Configuration (optional)
+MAX_IMAGE_SIZE=1024
+PHOTO_ANALYSIS_LOG_COSTS=true
 
 # Database and uploads (optional)
 SQLALCHEMY_DATABASE_URI=sqlite:///roadweave.db
