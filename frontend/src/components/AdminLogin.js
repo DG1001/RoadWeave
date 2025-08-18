@@ -1,0 +1,79 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:5000';
+
+function AdminLogin() {
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      navigate('/admin/dashboard');
+    }
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post(`${API_BASE}/api/admin/login`, credentials);
+      localStorage.setItem('adminToken', response.data.token);
+      navigate('/admin/dashboard');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div className="header">
+        <h1>RoadWeave Admin</h1>
+      </div>
+      <div className="container">
+        <div className="card" style={{ maxWidth: '400px', margin: '0 auto' }}>
+          <h2>Admin Login</h2>
+          {error && <div className="error">{error}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label>Username:</label>
+              <input
+                type="text"
+                value={credentials.username}
+                onChange={(e) => setCredentials({...credentials, username: e.target.value})}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>Password:</label>
+              <input
+                type="password"
+                value={credentials.password}
+                onChange={(e) => setCredentials({...credentials, password: e.target.value})}
+                required
+              />
+            </div>
+            <button type="submit" className="btn" disabled={loading}>
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
+          <div style={{ marginTop: '20px', fontSize: '0.9em', color: '#666' }}>
+            <p>Default credentials:</p>
+            <p>Username: admin</p>
+            <p>Password: password123</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default AdminLogin;
