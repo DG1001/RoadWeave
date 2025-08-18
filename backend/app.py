@@ -651,10 +651,6 @@ def serve_static(filename):
     if os.getenv('FLASK_ENV') == 'production' or os.getenv('FLASK_DEBUG', 'True').lower() == 'false':
         react_build_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', 'build')
         static_dir = os.path.join(react_build_dir, 'static')
-        print(f"🔍 Static dir: {static_dir}")
-        print(f"🔍 Looking for: {filename}")
-        print(f"🔍 Full path: {os.path.join(static_dir, filename)}")
-        print(f"🔍 Exists: {os.path.exists(os.path.join(static_dir, filename))}")
         
         if os.path.exists(static_dir):
             return send_from_directory(static_dir, filename)
