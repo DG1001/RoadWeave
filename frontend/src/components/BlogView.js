@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 import 'leaflet/dist/leaflet.css';
 import { getApiUrl } from '../config/api';
 
@@ -124,7 +125,7 @@ function BlogView() {
             usedPhotoIds.add(photoEntry.id);
             elements.push(
               ...lineElements.map((text, idx) => (
-                <p key={`line-${i}-text-${idx}`}>{text}</p>
+                <ReactMarkdown key={`line-${i}-text-${idx}`}>{text}</ReactMarkdown>
               ))
             );
             lineElements = []; // Reset line elements
@@ -179,21 +180,19 @@ function BlogView() {
         // Add any remaining line elements
         lineElements.forEach((text, idx) => {
           if (text.trim()) {
-            elements.push(<p key={`line-${i}-text-final-${idx}`}>{text}</p>);
+            elements.push(<ReactMarkdown key={`line-${i}-text-final-${idx}`}>{text}</ReactMarkdown>);
           }
         });
       } else {
-        // No photo markers, process as normal markdown
-        if (line.startsWith('# ')) {
-          elements.push(<h1 key={`line-${i}`}>{line.substring(2)}</h1>);
-        } else if (line.startsWith('## ')) {
-          elements.push(<h2 key={`line-${i}`}>{line.substring(3)}</h2>);
-        } else if (line.startsWith('### ')) {
-          elements.push(<h3 key={`line-${i}`}>{line.substring(4)}</h3>);
-        } else if (line.trim() === '') {
-          elements.push(<br key={`line-${i}`} />);
+        // No photo markers, render as markdown
+        if (line.trim()) {
+          elements.push(
+            <ReactMarkdown key={`line-${i}`}>
+              {line}
+            </ReactMarkdown>
+          );
         } else {
-          elements.push(<p key={`line-${i}`}>{line}</p>);
+          elements.push(<br key={`line-${i}`} />);
         }
       }
     }
