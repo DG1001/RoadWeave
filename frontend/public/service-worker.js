@@ -1,9 +1,8 @@
 const CACHE_NAME = 'roadweave-v1';
 const urlsToCache = [
   '/',
-  '/static/css/main.css',
-  '/static/js/main.js',
-  '/manifest.json'
+  '/manifest.json',
+  '/logo.png'
 ];
 
 self.addEventListener('install', (event) => {
