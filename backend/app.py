@@ -145,6 +145,11 @@ def is_image_file(filename):
     IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in IMAGE_EXTENSIONS
 
+def is_audio_file(filename):
+    """Check if file is an audio file"""
+    AUDIO_EXTENSIONS = {'mp3', 'wav', 'ogg', 'webm', 'm4a', 'aac'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in AUDIO_EXTENSIONS
+
 def analyze_image_with_ai(image_path, user_comment=""):
     """Analyze image using Gemini Vision API with cost tracking"""
     try:
@@ -229,6 +234,72 @@ def analyze_image_with_ai(image_path, user_comment=""):
         print(f"❌ Image analysis error: {e}")
         return f"A photo was shared{f': {user_comment}' if user_comment else '.'}"
 
+def transcribe_audio_with_ai(audio_path):
+    """Transcribe audio using Gemini API with cost tracking"""
+    try:
+        # Check if audio transcription is enabled
+        transcription_enabled = os.getenv('ENABLE_AUDIO_TRANSCRIPTION', 'false').lower() == 'true'
+        if not transcription_enabled:
+            print("🎤 Audio transcription disabled by configuration")
+            return "Voice message shared"
+
+        # Read audio file
+        with open(audio_path, 'rb') as audio_file:
+            audio_data = audio_file.read()
+        
+        # Get file size for cost estimation
+        file_size_mb = len(audio_data) / (1024 * 1024)
+        estimated_cost = file_size_mb * 0.001  # Rough estimate: $0.001 per MB
+        
+        # Log cost information (if enabled)
+        log_costs = os.getenv('AUDIO_TRANSCRIPTION_LOG_COSTS', 'true').lower() == 'true'
+        if log_costs:
+            print(f"💰 Audio Transcription Cost Estimate:")
+            print(f"   File size: {file_size_mb:.2f} MB")
+            print(f"   Estimated cost: ${estimated_cost:.6f}")
+        
+        # Use Gemini model for transcription
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        
+        # Prepare the audio for Gemini
+        audio_part = {
+            "mime_type": "audio/webm",  # Most common format from web browsers
+            "data": base64.b64encode(audio_data).decode('utf-8')
+        }
+        
+        # Create transcription prompt
+        prompt = """
+        Please transcribe this audio recording accurately. 
+        
+        Instructions:
+        1. Convert the speech to text exactly as spoken
+        2. Use proper punctuation and capitalization
+        3. If there are unclear parts, mark them as [unclear]
+        4. If multiple speakers, indicate when speaker changes
+        5. Keep the natural flow and tone of the speech
+        6. If the audio contains travel experiences, preserve the enthusiasm and details
+        
+        Provide only the transcription, no additional commentary.
+        """
+        
+        response = model.generate_content([prompt, audio_part])
+        transcription = response.text.strip()
+        
+        if log_costs:
+            output_length = len(transcription.split())
+            estimated_output_tokens = output_length * 1.3
+            estimated_output_cost = estimated_output_tokens * (0.40 / 1000000)
+            total_estimated_cost = estimated_cost + estimated_output_cost
+            print(f"   Transcription length: {len(transcription)} characters")
+            print(f"   Estimated total cost: ${total_estimated_cost:.6f}")
+        
+        print(f"🎤 Audio transcription successful: {transcription[:100]}...")
+        return transcription
+        
+    except Exception as e:
+        print(f"❌ Audio transcription error: {e}")
+        return "Voice message shared"
+
 # Language code to language name mapping
 LANGUAGE_NAMES = {
     'en': 'English',
@@ -285,12 +356,23 @@ def generate_blog_update(trip, new_entry):
         elif not photo_analysis_enabled and new_entry.content_type == 'photo':
             print("📸 Photo analysis disabled by configuration")
         
+        # Handle audio transcription (if enabled)
+        audio_transcription = ""
+        if new_entry.content_type == 'audio' and new_entry.filename:
+            audio_path = os.path.join(app.config['UPLOAD_FOLDER'], new_entry.filename)
+            if os.path.exists(audio_path) and is_audio_file(new_entry.filename):
+                print(f"🎤 Transcribing audio: {new_entry.filename}")
+                audio_transcription = transcribe_audio_with_ai(audio_path)
+                print(f"🤖 Audio transcription result: {audio_transcription}")
+        
         # Build enhanced content description
         content_description = new_entry.content
         if photo_analysis:
             content_description = f"Photo Analysis: {photo_analysis}"
             if new_entry.content and new_entry.content != "Photo upload":
                 content_description += f"\nUser Comment: {new_entry.content}"
+        elif audio_transcription:
+            content_description = f"Voice Message Transcription: {audio_transcription}"
         
         # Prepare photo placement instruction
         photo_instruction = ""
@@ -317,6 +399,7 @@ def generate_blog_update(trip, new_entry):
         
         Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
         {"If this is a photo, use the photo analysis to create vivid, descriptive content about what's shown in the image. " if photo_analysis else ""}
+        {"If this is an audio message, use the transcription to capture the traveler's voice and emotions in your blog text. " if audio_transcription else ""}
         Consider the location if GPS is available, and comment meaningfully on the user's input.
         Do NOT regenerate the entire blog - just provide the new content to append.
         Write in a friendly, travel blog style in {language_name}.
@@ -748,6 +831,9 @@ if __name__ == '__main__':
     photo_analysis_enabled = os.getenv('ENABLE_PHOTO_ANALYSIS', 'false').lower() == 'true'
     daily_limit = int(os.getenv('DAILY_PHOTO_ANALYSIS_LIMIT', 0))
     
+    # Check audio transcription configuration
+    audio_transcription_enabled = os.getenv('ENABLE_AUDIO_TRANSCRIPTION', 'false').lower() == 'true'
+    
     print(f"🚀 Starting RoadWeave backend server...")
     print(f"   Host: {host}")
     print(f"   Port: {port}")
@@ -765,5 +851,12 @@ if __name__ == '__main__':
         print(f"      Cost logging: {'✅ Enabled' if log_costs else '❌ Disabled'}")
     else:
         print(f"      Set ENABLE_PHOTO_ANALYSIS=true in .env to enable AI photo analysis")
+    
+    print(f"   🎤 Audio Transcription: {'✅ Enabled' if audio_transcription_enabled else '❌ Disabled'}")
+    if audio_transcription_enabled:
+        audio_log_costs = os.getenv('AUDIO_TRANSCRIPTION_LOG_COSTS', 'true').lower() == 'true'
+        print(f"      Cost logging: {'✅ Enabled' if audio_log_costs else '❌ Disabled'}")
+    else:
+        print(f"      Set ENABLE_AUDIO_TRANSCRIPTION=true in .env to enable AI audio transcription")
     
     app.run(debug=debug, host=host, port=port)
