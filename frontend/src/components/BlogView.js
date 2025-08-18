@@ -127,7 +127,10 @@ function BlogView() {
   return (
     <div>
       <div className="header">
-        <h1>{blog?.trip_name || 'Travel Blog'}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '10px' }}>
+          <img src="/logo.png" alt="RoadWeave" style={{ width: '40px', height: '40px' }} />
+          <h1>{blog?.trip_name || 'Travel Blog'}</h1>
+        </div>
         <p style={{ margin: 0, textAlign: 'center' }}>
           {blog?.description}
         </p>

@@ -179,7 +179,10 @@ function TravelerPWA() {
   return (
     <div>
       <div className="header">
-        <h1>RoadWeave</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '10px' }}>
+          <img src="/logo.png" alt="RoadWeave" style={{ width: '40px', height: '40px' }} />
+          <h1>RoadWeave</h1>
+        </div>
         <p style={{ margin: 0, textAlign: 'center' }}>
           Welcome {traveler.name} to {traveler.trip_name}
         </p>

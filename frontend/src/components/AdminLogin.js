@@ -36,7 +36,10 @@ function AdminLogin() {
   return (
     <div>
       <div className="header">
-        <h1>RoadWeave Admin</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+          <img src="/logo.png" alt="RoadWeave" style={{ width: '40px', height: '40px' }} />
+          <h1>RoadWeave Admin</h1>
+        </div>
       </div>
       <div className="container">
         <div className="card" style={{ maxWidth: '400px', margin: '0 auto' }}>

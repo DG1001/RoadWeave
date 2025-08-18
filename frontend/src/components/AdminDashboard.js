@@ -129,7 +129,10 @@ function AdminDashboard() {
       <div className="header">
         <div className="container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1>RoadWeave Admin Dashboard</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <img src="/logo.png" alt="RoadWeave" style={{ width: '40px', height: '40px' }} />
+              <h1>RoadWeave Admin Dashboard</h1>
+            </div>
             <button onClick={logout} className="btn btn-secondary">Logout</button>
           </div>
         </div>

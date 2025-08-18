@@ -1,5 +1,9 @@
 # RoadWeave - Collaborative Travel Blog
 
+<p align="center">
+  <img src="logo.png" alt="RoadWeave Logo" width="150" height="150">
+</p>
+
 RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogging. An admin creates trips and adds travelers who can upload photos, text, and voice recordings with GPS data. AI automatically generates blog content from the entries.
 
 ## Features
