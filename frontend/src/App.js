@@ -15,7 +15,6 @@ function App() {
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/traveler/:token" element={<TravelerPWA />} />
-          <Route path="/blog/:tripId" element={<BlogView />} />
           <Route path="/public/:token" element={<PublicBlogView />} />
         </Routes>
       </div>

@@ -485,7 +485,11 @@ def create_entry(token):
     })
 
 @app.route('/api/trips/<int:trip_id>/blog', methods=['GET'])
+@jwt_required()
 def get_blog(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+        
     trip = Trip.query.get_or_404(trip_id)
     return jsonify({
         'trip_name': trip.name,
@@ -496,7 +500,11 @@ def get_blog(trip_id):
     })
 
 @app.route('/api/trips/<int:trip_id>/entries', methods=['GET'])
+@jwt_required()
 def get_entries(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+        
     trip = Trip.query.get_or_404(trip_id)
     entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.desc()).all()
     

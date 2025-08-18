@@ -298,16 +298,33 @@ function AdminDashboard() {
                       {trip.traveler_count} travelers, {trip.entry_count} entries
                     </small>
                     <div style={{ marginTop: '10px' }}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(`/blog/${trip.id}`, '_blank');
-                        }}
-                        className="btn"
-                        style={{ marginRight: '10px' }}
-                      >
-                        View Blog
-                      </button>
+                      {trip.public_enabled && trip.public_token ? (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(`/public/${trip.public_token}`, '_blank');
+                          }}
+                          className="btn"
+                          style={{ marginRight: '10px' }}
+                        >
+                          View Public Blog
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            alert('Enable public access first to view the blog.');
+                          }}
+                          className="btn"
+                          style={{ 
+                            marginRight: '10px',
+                            backgroundColor: '#6c757d',
+                            color: 'white'
+                          }}
+                        >
+                          🔒 Blog Private
+                        </button>
+                      )}
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
