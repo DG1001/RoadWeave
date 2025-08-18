@@ -220,56 +220,72 @@ function TravelerPWA() {
               <div style={{ 
                 display: 'flex', 
                 flexWrap: 'wrap',
-                gap: '10px', 
-                marginTop: '10px' 
+                gap: '15px', 
+                marginTop: '10px',
+                justifyContent: 'space-around'
               }}>
                 <label style={{ 
                   display: 'flex', 
+                  flexDirection: 'column',
                   alignItems: 'center', 
                   fontWeight: 'normal',
-                  minWidth: 'fit-content',
-                  marginBottom: '5px'
+                  minWidth: '60px',
+                  cursor: 'pointer',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: entryType === 'text' ? '2px solid #007bff' : '1px solid #ddd',
+                  backgroundColor: entryType === 'text' ? '#f0f8ff' : 'transparent'
                 }}>
+                  <div style={{ fontSize: '24px', marginBottom: '5px' }}>📝</div>
                   <input
                     type="radio"
                     value="text"
                     checked={entryType === 'text'}
                     onChange={(e) => setEntryType(e.target.value)}
-                    style={{ marginRight: '8px' }}
+                    style={{ margin: '0' }}
                   />
-                  📝
                 </label>
                 <label style={{ 
                   display: 'flex', 
+                  flexDirection: 'column',
                   alignItems: 'center', 
                   fontWeight: 'normal',
-                  minWidth: 'fit-content',
-                  marginBottom: '5px'
+                  minWidth: '60px',
+                  cursor: 'pointer',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: entryType === 'photo' ? '2px solid #007bff' : '1px solid #ddd',
+                  backgroundColor: entryType === 'photo' ? '#f0f8ff' : 'transparent'
                 }}>
+                  <div style={{ fontSize: '24px', marginBottom: '5px' }}>📷</div>
                   <input
                     type="radio"
                     value="photo"
                     checked={entryType === 'photo'}
                     onChange={(e) => setEntryType(e.target.value)}
-                    style={{ marginRight: '8px' }}
+                    style={{ margin: '0' }}
                   />
-                  📷
                 </label>
                 <label style={{ 
                   display: 'flex', 
+                  flexDirection: 'column',
                   alignItems: 'center', 
                   fontWeight: 'normal',
-                  minWidth: 'fit-content',
-                  marginBottom: '5px'
+                  minWidth: '60px',
+                  cursor: 'pointer',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  border: entryType === 'audio' ? '2px solid #007bff' : '1px solid #ddd',
+                  backgroundColor: entryType === 'audio' ? '#f0f8ff' : 'transparent'
                 }}>
+                  <div style={{ fontSize: '24px', marginBottom: '5px' }}>🎤</div>
                   <input
                     type="radio"
                     value="audio"
                     checked={entryType === 'audio'}
                     onChange={(e) => setEntryType(e.target.value)}
-                    style={{ marginRight: '8px' }}
+                    style={{ margin: '0' }}
                   />
-                  🎤
                 </label>
               </div>
             </div>
