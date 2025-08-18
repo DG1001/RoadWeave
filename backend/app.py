@@ -653,7 +653,17 @@ def serve_static(filename):
         static_dir = os.path.join(react_build_dir, 'static')
         
         if os.path.exists(static_dir):
-            return send_from_directory(static_dir, filename)
+            response = send_from_directory(static_dir, filename)
+            
+            # Set correct MIME types
+            if filename.endswith('.css'):
+                response.headers['Content-Type'] = 'text/css'
+            elif filename.endswith('.js'):
+                response.headers['Content-Type'] = 'application/javascript'
+            elif filename.endswith('.map'):
+                response.headers['Content-Type'] = 'application/json'
+                
+            return response
     return jsonify({'error': 'Static file not found'}), 404
 
 # Serve React App (production mode)
