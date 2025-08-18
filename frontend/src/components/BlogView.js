@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import 'leaflet/dist/leaflet.css';
-import { getApiUrl } from '../config/api';
+import { getApiUrl, getAuthHeaders } from '../config/api';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -40,6 +40,7 @@ const createIcon = (type) => {
 
 function BlogView() {
   const { tripId } = useParams();
+  const navigate = useNavigate();
   const [blog, setBlog] = useState(null);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,22 +49,36 @@ function BlogView() {
   const [showAllEntries, setShowAllEntries] = useState(false);
 
   useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/admin');
+      return;
+    }
     loadBlogData();
     loadEntries();
-  }, [tripId]);
+  }, [tripId, navigate]);
 
   const loadBlogData = async () => {
     try {
-      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/blog`));
+      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/blog`), {
+        headers: getAuthHeaders()
+      });
       setBlog(response.data);
     } catch (err) {
-      setError('Failed to load blog data');
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        localStorage.removeItem('adminToken');
+        navigate('/admin');
+      } else {
+        setError('Failed to load blog data');
+      }
     }
   };
 
   const loadEntries = async () => {
     try {
-      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/entries`));
+      const response = await axios.get(getApiUrl(`/api/trips/${tripId}/entries`), {
+        headers: getAuthHeaders()
+      });
       const entriesData = response.data;
       setEntries(entriesData);
       
@@ -73,7 +88,12 @@ function BlogView() {
         setMapCenter([entryWithLocation.latitude, entryWithLocation.longitude]);
       }
     } catch (err) {
-      setError('Failed to load entries');
+      if (err.response?.status === 401 || err.response?.status === 403) {
+        localStorage.removeItem('adminToken');
+        navigate('/admin');
+      } else {
+        setError('Failed to load entries');
+      }
     } finally {
       setLoading(false);
     }

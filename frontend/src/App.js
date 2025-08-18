@@ -14,6 +14,7 @@ function App() {
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/blog/:tripId" element={<BlogView />} />
           <Route path="/traveler/:token" element={<TravelerPWA />} />
           <Route path="/public/:token" element={<PublicBlogView />} />
         </Routes>
