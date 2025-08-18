@@ -11,6 +11,7 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
 - **Admin Dashboard**: Create trips, add travelers, manage blog content
 - **Traveler PWA**: Upload photos/audio/text with automatic GPS capture
 - **AI Blog Generation**: Google Gemini automatically creates travel narratives
+- **AI Photo Analysis**: Optional Gemini Vision analysis of uploaded photos
 - **Interactive Map**: Leaflet.js map showing all entry locations
 - **Offline Support**: PWA works offline with upload queuing
 - **Real-time Updates**: Dynamic blog updates as new entries are added
@@ -198,6 +199,15 @@ RoadWeave is a Progressive Web App (PWA) that enables collaborative travel blogg
 - Explore interactive map with entry markers
 - Browse chronological entries
 
+### AI Photo Analysis
+
+- **Automatic Analysis**: When enabled, photos are analyzed using Gemini Vision API
+- **Enhanced Descriptions**: AI generates vivid descriptions of photo contents
+- **User Comments Integration**: Combines user comments with AI visual analysis
+- **Multi-language Support**: Photo analysis respects selected blog language
+- **Configuration**: Enable/disable via `ENABLE_PHOTO_ANALYSIS=true` in `.env`
+- **Visual Indicators**: Blog shows when photos have been AI-enhanced
+
 ## API Endpoints
 
 ### Admin Endpoints
@@ -276,6 +286,9 @@ JWT_SECRET_KEY=your-jwt-secret-key
 # Admin User (optional - if not set, random password generated)
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-secure-admin-password
+
+# AI Photo Analysis (optional - requires Gemini API key)
+ENABLE_PHOTO_ANALYSIS=true
 
 # Database and uploads (optional)
 SQLALCHEMY_DATABASE_URI=sqlite:///roadweave.db

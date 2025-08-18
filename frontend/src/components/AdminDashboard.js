@@ -325,9 +325,27 @@ function AdminDashboard() {
                         borderRadius: '4px',
                         marginBottom: '10px'
                       }}>
-                        <strong>{traveler.name}</strong>
-                        <br />
-                        <small>Added: {new Date(traveler.created_at).toLocaleDateString()}</small>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <strong>{traveler.name}</strong>
+                            <br />
+                            <small>Added: {new Date(traveler.created_at).toLocaleDateString()}</small>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const link = `${window.location.origin}/traveler/${traveler.token}`;
+                              navigator.clipboard.writeText(link);
+                              setSuccess(`Link copied for ${traveler.name}!`);
+                            }}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.8em', padding: '5px 10px' }}
+                          >
+                            Copy Link
+                          </button>
+                        </div>
+                        <div style={{ marginTop: '8px', fontSize: '0.85em', color: '#666', wordBreak: 'break-all' }}>
+                          <strong>Link:</strong> {window.location.origin}/traveler/{traveler.token}
+                        </div>
                       </div>
                     ))}
                   </div>

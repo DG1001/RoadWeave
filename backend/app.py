@@ -11,6 +11,9 @@ import google.generativeai as genai
 from werkzeug.utils import secure_filename
 import json
 from dotenv import load_dotenv
+import base64
+from PIL import Image
+import io
 
 # Load environment variables
 load_dotenv()
@@ -106,6 +109,65 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp3', 'wav', 'ogg', 'webm'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def is_image_file(filename):
+    """Check if file is an image"""
+    IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in IMAGE_EXTENSIONS
+
+def analyze_image_with_ai(image_path, user_comment=""):
+    """Analyze image using Gemini Vision API"""
+    try:
+        # Read and prepare image
+        with open(image_path, 'rb') as img_file:
+            image_data = img_file.read()
+        
+        # Convert to PIL Image for processing
+        image = Image.open(io.BytesIO(image_data))
+        
+        # Resize if too large (Gemini has size limits)
+        max_size = (1024, 1024)
+        if image.size[0] > max_size[0] or image.size[1] > max_size[1]:
+            image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            
+            # Save resized image to bytes
+            img_byte_arr = io.BytesIO()
+            format = 'JPEG' if image.mode == 'RGB' else 'PNG'
+            image.save(img_byte_arr, format=format)
+            image_data = img_byte_arr.getvalue()
+        
+        # Use Gemini vision model
+        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        
+        # Prepare the image for Gemini
+        image_part = {
+            "mime_type": "image/jpeg",
+            "data": base64.b64encode(image_data).decode('utf-8')
+        }
+        
+        # Create analysis prompt
+        prompt = f"""
+        Analyze this travel photo and provide a detailed description for a travel blog.
+        
+        User's comment about the photo: "{user_comment}"
+        
+        Please describe:
+        1. What you see in the image (objects, people, scenery, architecture, etc.)
+        2. The setting/location type (urban, nature, indoor, outdoor, etc.)
+        3. The mood or atmosphere of the scene
+        4. Any interesting details or notable features
+        5. How this relates to the user's comment if provided
+        
+        Write 2-3 sentences in a engaging, descriptive travel blog style.
+        Focus on creating vivid imagery that helps readers visualize the scene.
+        """
+        
+        response = model.generate_content([prompt, image_part])
+        return response.text.strip()
+        
+    except Exception as e:
+        print(f"Image analysis error: {e}")
+        return f"A photo was shared{f': {user_comment}' if user_comment else '.'}"
+
 # Language code to language name mapping
 LANGUAGE_NAMES = {
     'en': 'English',
@@ -141,6 +203,26 @@ def generate_blog_update(trip, new_entry):
         # Get language name for the prompt
         language_name = LANGUAGE_NAMES.get(trip.blog_language, 'English')
         
+        # Handle photo analysis (if enabled)
+        photo_analysis = ""
+        photo_analysis_enabled = os.getenv('ENABLE_PHOTO_ANALYSIS', 'false').lower() == 'true'
+        
+        if photo_analysis_enabled and new_entry.content_type == 'photo' and new_entry.filename:
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], new_entry.filename)
+            if os.path.exists(image_path) and is_image_file(new_entry.filename):
+                print(f"📸 Analyzing image: {new_entry.filename}")
+                photo_analysis = analyze_image_with_ai(image_path, new_entry.content)
+                print(f"🤖 Photo analysis result: {photo_analysis}")
+        elif not photo_analysis_enabled and new_entry.content_type == 'photo':
+            print("📸 Photo analysis disabled by configuration")
+        
+        # Build enhanced content description
+        content_description = new_entry.content
+        if photo_analysis:
+            content_description = f"Photo Analysis: {photo_analysis}"
+            if new_entry.content and new_entry.content != "Photo upload":
+                content_description += f"\nUser Comment: {new_entry.content}"
+        
         prompt = f"""
         You are helping to incrementally update a travel blog for a trip called "{trip.name}".
         
@@ -151,12 +233,13 @@ def generate_blog_update(trip, new_entry):
         
         New entry details:
         - Type: {new_entry.content_type}
-        - Content: {new_entry.content}
+        - Content: {content_description}
         - Location: {location_info}
         - Traveler: {new_entry.traveler.name}
         - Time: {new_entry.timestamp.strftime('%Y-%m-%d %H:%M')}
         
         Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
+        {"If this is a photo, use the photo analysis to create vivid, descriptive content about what's shown in the image. " if photo_analysis else ""}
         Consider the location if GPS is available, and comment meaningfully on the user's input.
         Do NOT regenerate the entire blog - just provide the new content to append.
         Write in a friendly, travel blog style in {language_name}.
@@ -257,6 +340,7 @@ def get_travelers(trip_id):
     return jsonify([{
         'id': traveler.id,
         'name': traveler.name,
+        'token': traveler.token,
         'created_at': traveler.created_at.isoformat()
     } for traveler in trip.travelers])
 
@@ -432,10 +516,16 @@ if __name__ == '__main__':
     port = int(os.getenv('FLASK_PORT', 5000))
     debug = os.getenv('FLASK_DEBUG', 'True').lower() == 'true'
     
+    # Check photo analysis configuration
+    photo_analysis_enabled = os.getenv('ENABLE_PHOTO_ANALYSIS', 'false').lower() == 'true'
+    
     print(f"🚀 Starting RoadWeave backend server...")
     print(f"   Host: {host}")
     print(f"   Port: {port}")
     print(f"   Debug: {debug}")
     print(f"   API Base: http://{host}:{port}")
+    print(f"   📸 Photo Analysis: {'✅ Enabled' if photo_analysis_enabled else '❌ Disabled'}")
+    if not photo_analysis_enabled:
+        print(f"      Set ENABLE_PHOTO_ANALYSIS=true in .env to enable AI photo analysis")
     
     app.run(debug=debug, host=host, port=port)

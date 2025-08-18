@@ -44,6 +44,7 @@ function BlogView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // Default to NYC
+  const [showAllEntries, setShowAllEntries] = useState(false);
 
   useEffect(() => {
     loadBlogData();
@@ -80,21 +81,138 @@ function BlogView() {
   const renderBlogContent = (content) => {
     if (!content) return <p>No blog content generated yet.</p>;
     
-    // Simple markdown-like rendering
+    // Simple markdown-like rendering with image integration
     const lines = content.split('\n');
-    return lines.map((line, index) => {
+    const elements = [];
+    
+    // Get photo entries for inline display
+    const photoEntries = entries.filter(entry => entry.content_type === 'photo' && entry.filename);
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
       if (line.startsWith('# ')) {
-        return <h1 key={index}>{line.substring(2)}</h1>;
+        elements.push(<h1 key={`line-${i}`}>{line.substring(2)}</h1>);
       } else if (line.startsWith('## ')) {
-        return <h2 key={index}>{line.substring(3)}</h2>;
+        elements.push(<h2 key={`line-${i}`}>{line.substring(3)}</h2>);
       } else if (line.startsWith('### ')) {
-        return <h3 key={index}>{line.substring(4)}</h3>;
+        elements.push(<h3 key={`line-${i}`}>{line.substring(4)}</h3>);
       } else if (line.trim() === '') {
-        return <br key={index} />;
+        elements.push(<br key={`line-${i}`} />);
       } else {
-        return <p key={index}>{line}</p>;
+        elements.push(<p key={`line-${i}`}>{line}</p>);
+        
+        // Check if this paragraph mentions a photo and insert it
+        const photoEntry = photoEntries.find(entry => {
+          const lineLower = line.toLowerCase();
+          const travelerName = entry.traveler_name.toLowerCase();
+          
+          // Match by traveler name
+          if (lineLower.includes(travelerName)) return true;
+          
+          // Match by user comment keywords
+          if (entry.content && entry.content !== 'Photo upload') {
+            const commentWords = entry.content.toLowerCase().split(' ').filter(word => word.length > 3);
+            return commentWords.some(word => lineLower.includes(word));
+          }
+          
+          // Match by timestamp proximity (if paragraph mentions time/date)
+          const entryTime = new Date(entry.timestamp);
+          const timeKeywords = ['morning', 'afternoon', 'evening', 'sunset', 'sunrise', 'today', 'yesterday'];
+          if (timeKeywords.some(keyword => lineLower.includes(keyword))) {
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (photoEntry && !elements.some(el => el.key === `photo-${photoEntry.id}`)) {
+          elements.push(
+            <div key={`photo-${photoEntry.id}`} style={{ 
+              margin: '15px 0', 
+              textAlign: 'center',
+              padding: '10px',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              border: '1px solid #e0e0e0'
+            }}>
+              <img
+                src={getFileUrl(photoEntry.filename)}
+                alt={`Photo by ${photoEntry.traveler_name}`}
+                style={{ 
+                  maxWidth: '100%', 
+                  height: 'auto', 
+                  borderRadius: '8px',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+              />
+              <div style={{ 
+                marginTop: '8px', 
+                fontSize: '0.9em', 
+                color: '#666',
+                fontStyle: 'italic'
+              }}>
+                📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+                {photoEntry.content && photoEntry.content !== 'Photo upload' && (
+                  <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                    "{photoEntry.content}"
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
       }
-    });
+    }
+    
+    // Add any remaining photos that weren't matched to blog content
+    const usedPhotoIds = elements
+      .filter(el => el.key && el.key.startsWith('photo-'))
+      .map(el => parseInt(el.key.replace('photo-', '')));
+    
+    const remainingPhotos = photoEntries.filter(entry => !usedPhotoIds.includes(entry.id));
+    
+    if (remainingPhotos.length > 0) {
+      elements.push(<h3 key="more-photos">📷 More Photos</h3>);
+      remainingPhotos.forEach(photoEntry => {
+        elements.push(
+          <div key={`photo-${photoEntry.id}`} style={{ 
+            margin: '15px 0', 
+            textAlign: 'center',
+            padding: '10px',
+            backgroundColor: '#f9f9f9',
+            borderRadius: '8px',
+            border: '1px solid #e0e0e0'
+          }}>
+            <img
+              src={getFileUrl(photoEntry.filename)}
+              alt={`Photo by ${photoEntry.traveler_name}`}
+              style={{ 
+                maxWidth: '100%', 
+                height: 'auto', 
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+              }}
+            />
+            <div style={{ 
+              marginTop: '8px', 
+              fontSize: '0.9em', 
+              color: '#666',
+              fontStyle: 'italic'
+            }}>
+              📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+              {photoEntry.content && photoEntry.content !== 'Photo upload' && (
+                <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                  "{photoEntry.content}"
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      });
+    }
+    
+    return elements;
   };
 
   const formatDate = (dateString) => {
@@ -205,12 +323,24 @@ function BlogView() {
 
         {/* Chronological Entries */}
         <div className="card">
-          <h2>All Entries ({entries.length})</h2>
-          {entries.length === 0 ? (
-            <p>No entries yet. Travelers can start sharing their experiences!</p>
-          ) : (
-            <div>
-              {entries.map((entry) => (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2>All Entries ({entries.length})</h2>
+            <button
+              onClick={() => setShowAllEntries(!showAllEntries)}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.9em', padding: '8px 16px' }}
+            >
+              {showAllEntries ? '▼ Hide Details' : '▶ Show Details'}
+            </button>
+          </div>
+          
+          {showAllEntries && (
+            <>
+              {entries.length === 0 ? (
+                <p>No entries yet. Travelers can start sharing their experiences!</p>
+              ) : (
+                <div>
+                  {entries.map((entry) => (
                 <div key={entry.id} className="entry-item">
                   <div className="entry-meta">
                     <strong>{entry.traveler_name}</strong> shared a {entry.content_type}
@@ -233,9 +363,19 @@ function BlogView() {
                         alt="Travel moment"
                         style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
                       />
-                      <p style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
-                        📷 User-uploaded image
-                      </p>
+                      <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
+                        <p style={{ margin: '2px 0' }}>
+                          📷 User-uploaded image
+                        </p>
+                        {entry.content && entry.content !== 'Photo upload' && (
+                          <p style={{ margin: '2px 0', fontStyle: 'italic' }}>
+                            💬 "{entry.content}"
+                          </p>
+                        )}
+                        <p style={{ margin: '2px 0', fontSize: '0.8em', color: '#4CAF50' }}>
+                          🤖 AI-enhanced description in blog
+                        </p>
+                      </div>
                     </div>
                   )}
                   
@@ -253,6 +393,8 @@ function BlogView() {
                 </div>
               ))}
             </div>
+              )}
+            </>
           )}
         </div>
 
