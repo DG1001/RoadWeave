@@ -98,6 +98,18 @@ function TravelerPWA() {
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
+      // Check file size (32MB limit)
+      const maxSizeBytes = 32 * 1024 * 1024; // 32MB
+      if (file.size > maxSizeBytes) {
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+        setError(`File too large! Selected file is ${sizeMB}MB, but maximum allowed is 32MB. Please compress your file or choose a smaller one.`);
+        setSelectedFile(null);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
+      setError(''); // Clear any previous errors
       setSelectedFile(file);
     }
   };
@@ -153,6 +165,9 @@ function TravelerPWA() {
     } catch (err) {
       if (err.response?.data?.offline) {
         setSuccess('You are offline. Entry will be submitted when connection is restored.');
+      } else if (err.response?.status === 413) {
+        const maxSizeMB = err.response?.data?.max_size_mb || 32;
+        setError(`File too large! Maximum file size is ${maxSizeMB}MB. Please choose a smaller file or compress your image/audio.`);
       } else {
         setError(err.response?.data?.error || 'Failed to submit entry');
       }
