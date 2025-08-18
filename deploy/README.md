@@ -16,11 +16,11 @@ This directory contains all files needed for production deployment of RoadWeave.
 
 ## Quick Deployment
 
-### For roadweave.sensem.de
+### For your domain
 
 1. **Set domain environment variable:**
    ```bash
-   export ROADWEAVE_DOMAIN="roadweave.sensem.de"
+   export ROADWEAVE_DOMAIN="roadweave.yourdomain.com"
    ```
 
 2. **Run deployment script as root:**
@@ -36,7 +36,7 @@ This directory contains all files needed for production deployment of RoadWeave.
 
 4. **Obtain SSL certificate:**
    ```bash
-   sudo certbot --nginx -d roadweave.sensem.de
+   sudo certbot --nginx -d roadweave.yourdomain.com
    ```
 
 5. **Restart service:**
@@ -49,7 +49,7 @@ This directory contains all files needed for production deployment of RoadWeave.
 ### 1. Build Application
 ```bash
 # Set your domain
-export ROADWEAVE_DOMAIN="roadweave.sensem.de"
+export ROADWEAVE_DOMAIN="roadweave.yourdomain.com"
 ./build.sh
 ```
 
@@ -74,8 +74,8 @@ sudo systemctl enable roadweave
 
 ### 4. Install Nginx Config
 ```bash
-# Update domain in config
-sed -i 's/roadweave.yourdomain.com/roadweave.sensem.de/g' nginx.conf
+# Update domain in config (replace with your actual domain)
+sed -i 's/roadweave.yourdomain.com/your-actual-domain.com/g' nginx.conf
 
 # Install nginx config
 sudo cp nginx.conf /etc/nginx/sites-available/roadweave
@@ -155,13 +155,13 @@ The deployment uses these permissions:
 
 The nginx config expects Let's Encrypt certificates at:
 ```
-/etc/letsencrypt/live/roadweave.sensem.de/fullchain.pem
-/etc/letsencrypt/live/roadweave.sensem.de/privkey.pem
+/etc/letsencrypt/live/roadweave.yourdomain.com/fullchain.pem
+/etc/letsencrypt/live/roadweave.yourdomain.com/privkey.pem
 ```
 
 Obtain with:
 ```bash
-sudo certbot --nginx -d roadweave.sensem.de
+sudo certbot --nginx -d roadweave.yourdomain.com
 ```
 
 ## Troubleshooting

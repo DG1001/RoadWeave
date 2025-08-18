@@ -521,7 +521,23 @@ RoadWeave can be deployed on a single subdomain using Flask to serve both the Re
 
 ### Step-by-Step Deployment
 
-#### 1. Server Preparation
+#### Option A: Manual tmux Start (Recommended for Testing)
+
+```bash
+# 1. Clone and setup
+git clone <your-repo> /path/to/roadweave
+cd /path/to/roadweave
+
+# 2. Set domain
+export ROADWEAVE_DOMAIN="roadweave.yourdomain.com"
+
+# 3. Start with script
+./start-roadweave.sh
+```
+
+For tmux usage, see `deploy/tmux-setup.md` for detailed instructions.
+
+#### Option B: Full Production Deployment
 
 ```bash
 # Clone repository
