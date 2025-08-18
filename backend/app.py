@@ -375,7 +375,8 @@ def generate_blog_update(trip, new_entry):
         
         # Prepare context
         existing_blog = trip.blog_content or "This is the beginning of a travel blog."
-        location_info = f"GPS coordinates: {new_entry.latitude}, {new_entry.longitude}" if new_entry.latitude and new_entry.longitude else "No location data"
+        # Prepare location info for AI context (not for direct inclusion in text)
+        location_info = f"Location available: {new_entry.latitude}, {new_entry.longitude}" if new_entry.latitude and new_entry.longitude else "No location data"
         
         # Get language name for the prompt
         language_name = LANGUAGE_NAMES.get(trip.blog_language, 'English')
@@ -438,14 +439,15 @@ def generate_blog_update(trip, new_entry):
         - Entry ID: {new_entry.id}
         - Type: {new_entry.content_type}
         - Content: {content_description}
-        - Location: {location_info}
         - Traveler: {new_entry.traveler.name}
         - Time: {format_timestamp_local(new_entry.timestamp)}
+        {"- GPS location data is available" if new_entry.latitude and new_entry.longitude else "- No GPS location data"}
         
         Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
         {"If this is a photo, use the photo analysis to create vivid, descriptive content about what's shown in the image. " if photo_analysis else ""}
         {"If this is an audio message, use the transcription to capture the traveler's voice and emotions in your blog text. " if audio_transcription else ""}
-        Consider the location if GPS is available, and comment meaningfully on the user's input.
+        If GPS location is available, you may reference the general area or setting contextually, but do NOT include specific coordinates in your response.
+        Focus on creating engaging narrative content rather than technical details.
         Do NOT regenerate the entire blog - just provide the new content to append.
         Write in a friendly, travel blog style in {language_name}.
         {photo_instruction}
@@ -455,7 +457,7 @@ def generate_blog_update(trip, new_entry):
         return response.text.strip()
     except Exception as e:
         print(f"AI generation error: {e}")
-        return f"\n\n**{format_timestamp_local(new_entry.timestamp)}** - {new_entry.traveler.name} shared a {new_entry.content_type}."
+        return f"\n\n**{format_timestamp_local(new_entry.timestamp)}** - {new_entry.traveler.name} shared a {new_entry.content_type}" + (f": {new_entry.content}" if new_entry.content else "") + "."
 
 # Routes
 @app.route('/api/admin/login', methods=['POST'])
