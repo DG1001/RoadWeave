@@ -220,73 +220,90 @@ function TravelerPWA() {
               <div style={{ 
                 display: 'flex', 
                 flexWrap: 'wrap',
-                gap: '15px', 
-                marginTop: '10px',
-                justifyContent: 'space-around'
+                gap: '12px', 
+                marginTop: '15px',
+                justifyContent: 'center'
               }}>
-                <label style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  fontWeight: 'normal',
-                  minWidth: '60px',
-                  cursor: 'pointer',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: entryType === 'text' ? '2px solid #007bff' : '1px solid #ddd',
-                  backgroundColor: entryType === 'text' ? '#f0f8ff' : 'transparent'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '5px' }}>📝</div>
-                  <input
-                    type="radio"
-                    value="text"
-                    checked={entryType === 'text'}
-                    onChange={(e) => setEntryType(e.target.value)}
-                    style={{ margin: '0' }}
-                  />
-                </label>
-                <label style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  fontWeight: 'normal',
-                  minWidth: '60px',
-                  cursor: 'pointer',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: entryType === 'photo' ? '2px solid #007bff' : '1px solid #ddd',
-                  backgroundColor: entryType === 'photo' ? '#f0f8ff' : 'transparent'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '5px' }}>📷</div>
-                  <input
-                    type="radio"
-                    value="photo"
-                    checked={entryType === 'photo'}
-                    onChange={(e) => setEntryType(e.target.value)}
-                    style={{ margin: '0' }}
-                  />
-                </label>
-                <label style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  alignItems: 'center', 
-                  fontWeight: 'normal',
-                  minWidth: '60px',
-                  cursor: 'pointer',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  border: entryType === 'audio' ? '2px solid #007bff' : '1px solid #ddd',
-                  backgroundColor: entryType === 'audio' ? '#f0f8ff' : 'transparent'
-                }}>
-                  <div style={{ fontSize: '24px', marginBottom: '5px' }}>🎤</div>
-                  <input
-                    type="radio"
-                    value="audio"
-                    checked={entryType === 'audio'}
-                    onChange={(e) => setEntryType(e.target.value)}
-                    style={{ margin: '0' }}
-                  />
-                </label>
+                <button
+                  type="button"
+                  onClick={() => setEntryType('text')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '80px',
+                    height: '80px',
+                    cursor: 'pointer',
+                    padding: '12px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    backgroundColor: entryType === 'text' ? '#007bff' : '#f8f9fa',
+                    color: entryType === 'text' ? 'white' : '#6c757d',
+                    boxShadow: entryType === 'text' 
+                      ? '0 4px 12px rgba(0, 123, 255, 0.3)' 
+                      : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    transform: entryType === 'text' ? 'translateY(-2px)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ fontSize: '28px', marginBottom: '4px' }}>📝</div>
+                  <div style={{ fontSize: '12px', fontWeight: '500' }}>Text</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEntryType('photo')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '80px',
+                    height: '80px',
+                    cursor: 'pointer',
+                    padding: '12px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    backgroundColor: entryType === 'photo' ? '#007bff' : '#f8f9fa',
+                    color: entryType === 'photo' ? 'white' : '#6c757d',
+                    boxShadow: entryType === 'photo' 
+                      ? '0 4px 12px rgba(0, 123, 255, 0.3)' 
+                      : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    transform: entryType === 'photo' ? 'translateY(-2px)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ fontSize: '28px', marginBottom: '4px' }}>📷</div>
+                  <div style={{ fontSize: '12px', fontWeight: '500' }}>Photo</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEntryType('audio')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minWidth: '80px',
+                    height: '80px',
+                    cursor: 'pointer',
+                    padding: '12px',
+                    borderRadius: '16px',
+                    border: 'none',
+                    backgroundColor: entryType === 'audio' ? '#007bff' : '#f8f9fa',
+                    color: entryType === 'audio' ? 'white' : '#6c757d',
+                    boxShadow: entryType === 'audio' 
+                      ? '0 4px 12px rgba(0, 123, 255, 0.3)' 
+                      : '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    transform: entryType === 'audio' ? 'translateY(-2px)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <div style={{ fontSize: '28px', marginBottom: '4px' }}>🎤</div>
+                  <div style={{ fontSize: '12px', fontWeight: '500' }}>Voice</div>
+                </button>
               </div>
             </div>
 
