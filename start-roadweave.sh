@@ -40,7 +40,15 @@ fi
 if [ ! -d "$PROJECT_DIR/frontend/build" ]; then
     echo -e "${YELLOW}📦 Frontend not built. Building now...${NC}"
     cd "$PROJECT_DIR/frontend"
-    npm ci --only=production
+    
+    # Check if node_modules exists, if not install dependencies
+    if [ ! -d "node_modules" ]; then
+        echo -e "${BLUE}📦 Installing frontend dependencies...${NC}"
+        npm install --only=production
+    else
+        echo -e "${BLUE}📦 Dependencies already installed, building...${NC}"
+    fi
+    
     REACT_APP_API_BASE="https://$DOMAIN" npm run build
     cd "$PROJECT_DIR"
     echo -e "${GREEN}✅ Frontend built successfully${NC}"

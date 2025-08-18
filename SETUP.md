@@ -14,7 +14,12 @@
    nano backend/.env  # Set your GEMINI_API_KEY
    ```
 
-3. **Start application:**
+3. **Build frontend (if npm install already done):**
+   ```bash
+   ./build-frontend.sh
+   ```
+
+4. **Start application:**
    ```bash
    ./start-roadweave.sh
    ```
