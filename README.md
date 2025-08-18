@@ -465,6 +465,15 @@ roadweave/
 - Check console for JavaScript errors
 - Use Flask debug mode for backend development
 
+## Development Credits
+
+This application was created using:
+
+- **[Claude Code](https://claude.ai/code)** - Anthropic's official CLI for Claude AI
+- **[XaresAICoder](https://github.com/DG1001/XaresAICoder)** - Enhanced AI coding environment
+
+The entire RoadWeave application, including its sophisticated AI photo analysis, multi-language support, and PWA capabilities, was developed through AI-assisted coding. This demonstrates the power of modern AI development tools in creating production-ready applications.
+
 ## License
 
 This project is for educational purposes. Please ensure you have proper licenses for all dependencies and API keys.
