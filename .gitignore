@@ -31,4 +31,5 @@ frontend/.env
 Thumbs.db
 prompt.md
 frontend/node_modules/
+frontend/package-lock.json
 backend/uploads/
