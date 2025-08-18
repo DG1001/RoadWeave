@@ -4,9 +4,10 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token, ge
 from flask_cors import CORS
 import os
 import uuid
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 import secrets
 import string
+import pytz
 import google.generativeai as genai
 from werkzeug.utils import secure_filename
 import json
@@ -106,6 +107,36 @@ ADMIN_USERNAME, ADMIN_PASSWORD = setup_admin_credentials()
 
 def generate_token():
     return secrets.token_urlsafe(32)
+
+def format_timestamp_local(utc_timestamp, timezone_name='Europe/Berlin'):
+    """Convert UTC timestamp to local timezone and format it"""
+    try:
+        # Get timezone from environment or use default
+        local_tz_name = os.getenv('TIMEZONE', timezone_name)
+        local_tz = pytz.timezone(local_tz_name)
+        
+        # Convert UTC to local timezone
+        if utc_timestamp.tzinfo is None:
+            # Assume UTC if no timezone info
+            utc_timestamp = pytz.utc.localize(utc_timestamp)
+        
+        local_time = utc_timestamp.astimezone(local_tz)
+        return local_time.strftime('%Y-%m-%d %H:%M')
+    except Exception as e:
+        print(f"Timezone conversion error: {e}")
+        # Fallback to UTC
+        return utc_timestamp.strftime('%Y-%m-%d %H:%M UTC')
+
+def timestamp_to_iso(utc_timestamp):
+    """Convert UTC timestamp to ISO format with timezone info"""
+    try:
+        if utc_timestamp.tzinfo is None:
+            # Add UTC timezone info if missing
+            utc_timestamp = pytz.utc.localize(utc_timestamp)
+        return utc_timestamp.isoformat()
+    except Exception as e:
+        print(f"ISO timestamp conversion error: {e}")
+        return utc_timestamp.isoformat()
 
 # Simple daily usage tracking (in-memory for MVP)
 daily_usage_tracker = {}
@@ -395,7 +426,7 @@ def generate_blog_update(trip, new_entry):
         - Content: {content_description}
         - Location: {location_info}
         - Traveler: {new_entry.traveler.name}
-        - Time: {new_entry.timestamp.strftime('%Y-%m-%d %H:%M')}
+        - Time: {format_timestamp_local(new_entry.timestamp)}
         
         Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
         {"If this is a photo, use the photo analysis to create vivid, descriptive content about what's shown in the image. " if photo_analysis else ""}
@@ -410,7 +441,7 @@ def generate_blog_update(trip, new_entry):
         return response.text.strip()
     except Exception as e:
         print(f"AI generation error: {e}")
-        return f"\n\n**{new_entry.timestamp.strftime('%Y-%m-%d %H:%M')}** - {new_entry.traveler.name} shared a {new_entry.content_type}."
+        return f"\n\n**{format_timestamp_local(new_entry.timestamp)}** - {new_entry.traveler.name} shared a {new_entry.content_type}."
 
 # Routes
 @app.route('/api/admin/login', methods=['POST'])
@@ -450,7 +481,7 @@ def create_trip():
         'description': trip.description,
         'blog_language': trip.blog_language,
         'admin_token': trip.admin_token,
-        'created_at': trip.created_at.isoformat()
+        'created_at': timestamp_to_iso(trip.created_at)
     })
 
 @app.route('/api/admin/trips', methods=['GET'])
@@ -467,7 +498,7 @@ def get_trips():
         'blog_language': trip.blog_language,
         'public_enabled': trip.public_enabled,
         'public_token': trip.public_token,
-        'created_at': trip.created_at.isoformat(),
+        'created_at': timestamp_to_iso(trip.created_at),
         'traveler_count': len(trip.travelers),
         'entry_count': len(trip.entries)
     } for trip in trips])
@@ -504,7 +535,7 @@ def get_travelers(trip_id):
         'id': traveler.id,
         'name': traveler.name,
         'token': traveler.token,
-        'created_at': traveler.created_at.isoformat()
+        'created_at': timestamp_to_iso(traveler.created_at)
     } for traveler in trip.travelers])
 
 @app.route('/api/traveler/verify/<token>', methods=['GET'])
@@ -579,7 +610,7 @@ def get_blog(trip_id):
         'description': trip.description,
         'blog_content': trip.blog_content,
         'blog_language': trip.blog_language,
-        'created_at': trip.created_at.isoformat()
+        'created_at': timestamp_to_iso(trip.created_at)
     })
 
 @app.route('/api/trips/<int:trip_id>/entries', methods=['GET'])
@@ -597,7 +628,7 @@ def get_entries(trip_id):
         'content': entry.content,
         'latitude': entry.latitude,
         'longitude': entry.longitude,
-        'timestamp': entry.timestamp.isoformat(),
+        'timestamp': timestamp_to_iso(entry.timestamp),
         'traveler_name': entry.traveler.name,
         'filename': entry.filename
     } for entry in entries])
@@ -702,7 +733,7 @@ def get_public_blog(token):
         'description': trip.description,
         'blog_content': trip.blog_content,
         'blog_language': trip.blog_language,
-        'created_at': trip.created_at.isoformat()
+        'created_at': timestamp_to_iso(trip.created_at)
     })
 
 @app.route('/api/public/<token>/entries')
@@ -719,7 +750,7 @@ def get_public_entries(token):
         'content_type': entry.content_type,
         'latitude': entry.latitude,
         'longitude': entry.longitude,
-        'timestamp': entry.timestamp.isoformat(),
+        'timestamp': timestamp_to_iso(entry.timestamp),
         'traveler_name': entry.traveler.name,
         'filename': entry.filename
     } for entry in entries])
