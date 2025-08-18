@@ -217,36 +217,59 @@ function TravelerPWA() {
             {/* Entry Type Selection */}
             <div className="form-group">
               <label>What would you like to share?</label>
-              <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal' }}>
+              <div style={{ 
+                display: 'flex', 
+                flexWrap: 'wrap',
+                gap: '10px', 
+                marginTop: '10px' 
+              }}>
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontWeight: 'normal',
+                  minWidth: 'fit-content',
+                  marginBottom: '5px'
+                }}>
                   <input
                     type="radio"
                     value="text"
                     checked={entryType === 'text'}
                     onChange={(e) => setEntryType(e.target.value)}
-                    style={{ marginRight: '5px' }}
+                    style={{ marginRight: '8px' }}
                   />
-                  Text
+                  📝 Text
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal' }}>
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontWeight: 'normal',
+                  minWidth: 'fit-content',
+                  marginBottom: '5px'
+                }}>
                   <input
                     type="radio"
                     value="photo"
                     checked={entryType === 'photo'}
                     onChange={(e) => setEntryType(e.target.value)}
-                    style={{ marginRight: '5px' }}
+                    style={{ marginRight: '8px' }}
                   />
-                  Photo
+                  📷 Photo
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', fontWeight: 'normal' }}>
+                <label style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontWeight: 'normal',
+                  minWidth: 'fit-content',
+                  marginBottom: '5px'
+                }}>
                   <input
                     type="radio"
                     value="audio"
                     checked={entryType === 'audio'}
                     onChange={(e) => setEntryType(e.target.value)}
-                    style={{ marginRight: '5px' }}
+                    style={{ marginRight: '8px' }}
                   />
-                  Voice
+                  🎤 Voice
                 </label>
               </div>
             </div>
