@@ -12,6 +12,8 @@ function TravelerPWA() {
   const [location, setLocation] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [updatingLocation, setUpdatingLocation] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   
   // Form states
   const [entryType, setEntryType] = useState('text');
@@ -27,6 +29,19 @@ function TravelerPWA() {
   useEffect(() => {
     verifyToken();
     getCurrentLocation();
+    
+    // PWA install prompt handling
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallPrompt(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, [token]);
 
   const verifyToken = async () => {
@@ -207,6 +222,24 @@ function TravelerPWA() {
     }
   };
 
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      setShowInstallPrompt(false);
+    }
+    
+    setDeferredPrompt(null);
+  };
+
+  const dismissInstallPrompt = () => {
+    setShowInstallPrompt(false);
+    setDeferredPrompt(null);
+  };
+
   if (!traveler) {
     return (
       <div className="container">
@@ -236,6 +269,31 @@ function TravelerPWA() {
       <div className="container">
         {error && <div className="error">{error}</div>}
         {success && <div className="success">{success}</div>}
+
+        {/* PWA Install Prompt */}
+        {showInstallPrompt && (
+          <div className="card" style={{ backgroundColor: '#e8f5e8', border: '1px solid #d4edda' }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#155724' }}>📱 Install RoadWeave</h3>
+            <p style={{ margin: '0 0 15px 0', color: '#155724' }}>
+              Install RoadWeave as an app on your device for quick access to this trip!
+            </p>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={handleInstallClick}
+                className="btn"
+                style={{ backgroundColor: '#28a745', color: 'white' }}
+              >
+                📱 Install App
+              </button>
+              <button 
+                onClick={dismissInstallPrompt}
+                className="btn btn-secondary"
+              >
+                Not now
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Location Status */}
         <div className="card">

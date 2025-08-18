@@ -5,11 +5,13 @@ import TravelerPWA from './components/TravelerPWA';
 import BlogView from './components/BlogView';
 import PublicBlogView from './components/PublicBlogView';
 import AdminLogin from './components/AdminLogin';
+import PWAManifest from './components/PWAManifest';
 
 function App() {
   return (
     <Router>
       <div className="App">
+        <PWAManifest />
         <Routes>
           <Route path="/" element={<Navigate to="/admin" replace />} />
           <Route path="/admin" element={<AdminLogin />} />
