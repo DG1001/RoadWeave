@@ -633,7 +633,6 @@ def create_entry(token):
         if file and file.filename and allowed_file(file.filename):
             filename = secure_filename(f"{uuid.uuid4()}_{file.filename}")
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            content = filename
     
     entry = Entry(
         trip_id=traveler.trip_id,

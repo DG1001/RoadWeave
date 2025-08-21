@@ -159,6 +159,11 @@ function PublicBlogView() {
                   fontStyle: 'italic'
                 }}>
                   📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+                  {photoEntry.content && photoEntry.content !== 'Photo upload' && (
+                    <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                      "{photoEntry.content}"
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -227,6 +232,11 @@ function PublicBlogView() {
               fontStyle: 'italic'
             }}>
               📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+              {photoEntry.content && photoEntry.content !== 'Photo upload' && (
+                <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                  "{photoEntry.content}"
+                </div>
+              )}
             </div>
           </div>
         );
