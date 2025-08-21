@@ -652,7 +652,16 @@ def create_entry(token):
     try:
         ai_update = generate_blog_update(traveler.trip, entry)
         if ai_update:
-            traveler.trip.blog_content += f"\n\n{ai_update}"
+            # Prepend new content to show latest entries first
+            header_end = traveler.trip.blog_content.find('\n\n') 
+            if header_end != -1:
+                # Insert after the header (trip name and description)
+                header = traveler.trip.blog_content[:header_end + 2]
+                content = traveler.trip.blog_content[header_end + 2:]
+                traveler.trip.blog_content = f"{header}{ai_update}\n\n{content}"
+            else:
+                # If no header found, just prepend
+                traveler.trip.blog_content = f"{ai_update}\n\n{traveler.trip.blog_content}"
             db.session.commit()
     except Exception as e:
         print(f"AI update failed: {e}")
