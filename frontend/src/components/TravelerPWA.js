@@ -111,22 +111,109 @@ function TravelerPWA() {
     }
   };
 
-  const handleFileSelect = (event) => {
+  const compressImage = (file, quality = 0.7, maxWidth = 1920, maxHeight = 1080) => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        let { width, height } = img;
+        
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw and compress
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          resolve(new File([blob], file.name, {
+            type: 'image/jpeg',
+            lastModified: Date.now()
+          }));
+        }, 'image/jpeg', quality);
+      };
+      
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      // Check file size (32MB limit)
+      setError('');
+      
       const maxSizeBytes = 32 * 1024 * 1024; // 32MB
-      if (file.size > maxSizeBytes) {
-        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-        setError(`File too large! Selected file is ${sizeMB}MB, but maximum allowed is 32MB. Please compress your file or choose a smaller one.`);
+      const originalSizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      
+      // Compress ALL images, regardless of size, to ensure they're optimized
+      if (file.type.startsWith('image/')) {
+        setError(`Optimizing image (${originalSizeMB}MB)...`);
+        try {
+          let compressedFile = await compressImage(file, 0.8, 1920, 1080);
+          
+          // If still too large, compress more aggressively
+          if (compressedFile.size > maxSizeBytes) {
+            compressedFile = await compressImage(file, 0.6, 1920, 1080);
+          }
+          
+          // If still too large, compress even more
+          if (compressedFile.size > maxSizeBytes) {
+            compressedFile = await compressImage(file, 0.4, 1280, 720);
+          }
+          
+          // Final attempt with very aggressive compression
+          if (compressedFile.size > maxSizeBytes) {
+            compressedFile = await compressImage(file, 0.2, 1024, 768);
+          }
+          
+          const compressedSizeMB = (compressedFile.size / (1024 * 1024)).toFixed(1);
+          
+          if (compressedFile.size > maxSizeBytes) {
+            setError(`Image still too large after compression (${compressedSizeMB}MB). Please try taking a photo with lower resolution.`);
+            setSelectedFile(null);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = '';
+            }
+            return;
+          }
+          
+          setSelectedFile(compressedFile);
+          if (originalSizeMB !== compressedSizeMB) {
+            setError(`✓ Image optimized from ${originalSizeMB}MB to ${compressedSizeMB}MB`);
+            setTimeout(() => setError(''), 3000); // Clear success message after 3 seconds
+          }
+          
+        } catch (error) {
+          setError('Failed to optimize image. Please try again.');
+          setSelectedFile(null);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }
+      } else if (file.size > maxSizeBytes) {
+        // Non-image files
+        setError(`File too large! Selected file is ${originalSizeMB}MB, but maximum allowed is 32MB.`);
         setSelectedFile(null);
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
-        return;
+      } else {
+        setSelectedFile(file);
       }
-      setError(''); // Clear any previous errors
-      setSelectedFile(file);
     }
   };
 
