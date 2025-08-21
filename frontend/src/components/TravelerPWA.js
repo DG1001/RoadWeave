@@ -152,7 +152,7 @@ function TravelerPWA() {
     });
   };
 
-  const compressImage = (file, quality = 0.7, maxWidth = 1920, maxHeight = 1080) => {
+  const compressImage = (file, quality = 0.9, maxWidth = 2560, maxHeight = 1440) => {
     return new Promise((resolve) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -219,21 +219,21 @@ function TravelerPWA() {
       if (file.type.startsWith('image/')) {
         setError(`Optimizing image (${originalSizeMB}MB)...`);
         try {
-          let compressedFile = await compressImage(file, 0.8, 1920, 1080);
+          let compressedFile = await compressImage(file, 0.9, 2560, 1440);
           
           // If still too large, compress more aggressively
           if (compressedFile.size > maxSizeBytes) {
-            compressedFile = await compressImage(file, 0.6, 1920, 1080);
+            compressedFile = await compressImage(file, 0.8, 2560, 1440);
           }
           
           // If still too large, compress even more
           if (compressedFile.size > maxSizeBytes) {
-            compressedFile = await compressImage(file, 0.4, 1280, 720);
+            compressedFile = await compressImage(file, 0.7, 1920, 1080);
           }
           
           // Final attempt with very aggressive compression
           if (compressedFile.size > maxSizeBytes) {
-            compressedFile = await compressImage(file, 0.2, 1024, 768);
+            compressedFile = await compressImage(file, 0.5, 1920, 1080);
           }
           
           const compressedSizeMB = (compressedFile.size / (1024 * 1024)).toFixed(1);
