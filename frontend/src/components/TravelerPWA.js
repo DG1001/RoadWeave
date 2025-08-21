@@ -522,15 +522,46 @@ function TravelerPWA() {
             {entryType === 'photo' && (
               <div>
                 <div className="form-group">
-                  <label>Select a photo:</label>
+                  <label>Add a photo:</label>
+                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('camera-input').click()}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.9em' }}
+                    >
+                      📷 Take Photo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('file-input').click()}
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.9em' }}
+                    >
+                      📁 Choose File
+                    </button>
+                  </div>
+                  
+                  {/* Hidden camera input */}
                   <input
-                    ref={fileInputRef}
+                    id="camera-input"
                     type="file"
                     accept="image/*"
                     capture="environment"
                     onChange={handleFileSelect}
-                    required
+                    style={{ display: 'none' }}
+                    ref={fileInputRef}
                   />
+                  
+                  {/* Hidden file input */}
+                  <input
+                    id="file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                  />
+                  
                   {selectedFile && (
                     <p style={{ marginTop: '10px', color: '#28a745' }}>
                       ✓ Selected: {selectedFile.name}
@@ -606,7 +637,7 @@ function TravelerPWA() {
             <button 
               type="submit" 
               className="btn" 
-              disabled={loading || updatingLocation}
+              disabled={loading || updatingLocation || (entryType === 'photo' && !selectedFile)}
               style={{ width: '100%', marginTop: '20px' }}
             >
               {updatingLocation ? '📍 Getting location...' : loading ? 'Submitting...' : 'Share Entry'}
