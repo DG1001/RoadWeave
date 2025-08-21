@@ -20,7 +20,7 @@ export const getApiUrl = (endpoint) => {
 // Helper function to get auth headers
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('adminToken');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  return token ? { 'X-Auth-Token': `Bearer ${token}` } : {};
 };
 
 export default API_CONFIG;

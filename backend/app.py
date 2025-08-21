@@ -20,13 +20,20 @@ import io
 load_dotenv()
 
 app = Flask(__name__, static_folder=None)
-CORS(app)
+CORS(app, 
+     origins=['*'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization', 'X-Auth-Token'],
+     supports_credentials=True)
 
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///roadweave.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
+app.config['JWT_TOKEN_LOCATION'] = ['headers', 'query_string']
+app.config['JWT_HEADER_NAME'] = 'X-Auth-Token'
+app.config['JWT_HEADER_TYPE'] = 'Bearer'
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 32 * 1024 * 1024))  # 32MB max file size
 
@@ -35,6 +42,24 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
+
+# Configure JWT to also accept tokens from X-Auth-Token header
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    return False
+
+@jwt.additional_headers_loader
+def add_custom_headers(identity):
+    return {}
+
+# Custom token location function
+def get_jwt_from_custom_header():
+    token = request.headers.get('X-Auth-Token')
+    if token and token.startswith('Bearer '):
+        return token[7:]  # Remove 'Bearer ' prefix
+    elif token:
+        return token
+    return None
 
 # Error handlers
 @app.errorhandler(413)
@@ -49,6 +74,29 @@ def request_entity_too_large(error):
 @app.errorhandler(400)
 def bad_request(error):
     return jsonify({'error': 'Bad request. Please check your input.'}), 400
+
+# CORS preflight handler
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        response = jsonify({})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Headers', "Content-Type,Authorization,X-Auth-Token")
+        response.headers.add('Access-Control-Allow-Methods', "GET,PUT,POST,DELETE,OPTIONS")
+        return response
+
+# JWT error handlers
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({'error': 'Token has expired'}), 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    return jsonify({'error': 'Invalid token'}), 401
+
+@jwt.unauthorized_loader
+def unauthorized_callback(error):
+    return jsonify({'error': 'Authorization token required'}), 401
 
 # Configure Gemini AI
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'your-gemini-api-key-here')
@@ -656,7 +704,7 @@ def regenerate_blog(trip_id):
         return jsonify({'error': 'Admin access required'}), 403
     
     trip = Trip.query.get_or_404(trip_id)
-    entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.asc()).all()
+    entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.desc()).all()
     
     # Reset blog content
     trip.blog_content = f"# {trip.name}\n\n{trip.description}\n"
@@ -778,6 +826,7 @@ def uploaded_file(filename):
 @app.route('/api/health')
 def health():
     return jsonify({'status': 'healthy'})
+
 
 # Serve static files explicitly (before catch-all route)
 @app.route('/static/<path:filename>')
