@@ -151,13 +151,14 @@ function BlogView() {
             lineElements = []; // Reset line elements
             
             elements.push(
-              <div key={`photo-${photoEntry.id}`} style={{ 
+              <div id={`blog-entry-${photoEntry.id}`} key={`photo-${photoEntry.id}`} style={{ 
                 margin: '15px 0', 
                 textAlign: 'center',
                 padding: '10px',
                 backgroundColor: '#f9f9f9',
                 borderRadius: '8px',
-                border: '1px solid #e0e0e0'
+                border: '1px solid #e0e0e0',
+                scrollMarginTop: '20px'
               }}>
                 <img
                   src={getFileUrl(photoEntry.filename)}
@@ -224,13 +225,14 @@ function BlogView() {
       elements.push(<h3 key="more-photos">📷 More Photos</h3>);
       remainingPhotos.forEach(photoEntry => {
         elements.push(
-          <div key={`photo-${photoEntry.id}`} style={{ 
+          <div id={`blog-entry-${photoEntry.id}`} key={`photo-${photoEntry.id}`} style={{ 
             margin: '15px 0', 
             textAlign: 'center',
             padding: '10px',
             backgroundColor: '#f9f9f9',
             borderRadius: '8px',
-            border: '1px solid #e0e0e0'
+            border: '1px solid #e0e0e0',
+            scrollMarginTop: '20px'
           }}>
             <img
               src={getFileUrl(photoEntry.filename)}
@@ -269,6 +271,25 @@ function BlogView() {
 
   const getFileUrl = (filename) => {
     return getApiUrl(`/uploads/${filename}`);
+  };
+
+  const hasPhotoInBlog = (entry) => {
+    if (!blog?.blog_content || entry.content_type !== 'photo') return false;
+    return blog.blog_content.includes(`[PHOTO:${entry.id}]`);
+  };
+
+  const scrollToPhotoInBlog = (entryId) => {
+    const element = document.getElementById(`blog-entry-${entryId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a brief highlight effect
+      element.style.backgroundColor = '#fff3cd';
+      element.style.border = '2px solid #ffc107';
+      setTimeout(() => {
+        element.style.backgroundColor = '#f9f9f9';
+        element.style.border = '1px solid #e0e0e0';
+      }, 2000);
+    }
   };
 
   if (loading) {
@@ -333,11 +354,42 @@ function BlogView() {
                           <p>{entry.content}</p>
                         )}
                         {entry.content_type === 'photo' && entry.filename && (
-                          <img
-                            src={getFileUrl(entry.filename)}
-                            alt="Travel moment"
-                            style={{ width: '100%', marginTop: '5px' }}
-                          />
+                          <div>
+                            <img
+                              src={getFileUrl(entry.filename)}
+                              alt="Travel moment"
+                              style={{ 
+                                width: '100%', 
+                                marginTop: '5px',
+                                cursor: hasPhotoInBlog(entry) ? 'pointer' : 'default',
+                                border: hasPhotoInBlog(entry) ? '2px solid #007bff' : 'none',
+                                borderRadius: '4px',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onClick={hasPhotoInBlog(entry) ? () => scrollToPhotoInBlog(entry.id) : undefined}
+                              onMouseOver={(e) => {
+                                if (hasPhotoInBlog(entry)) {
+                                  e.target.style.opacity = '0.8';
+                                }
+                              }}
+                              onMouseOut={(e) => {
+                                if (hasPhotoInBlog(entry)) {
+                                  e.target.style.opacity = '1';
+                                }
+                              }}
+                            />
+                            {hasPhotoInBlog(entry) && (
+                              <div style={{
+                                fontSize: '0.7em',
+                                color: '#007bff',
+                                textAlign: 'center',
+                                marginTop: '2px',
+                                fontStyle: 'italic'
+                              }}>
+                                Click to view in story
+                              </div>
+                            )}
+                          </div>
                         )}
                         {entry.content_type === 'audio' && entry.filename && (
                           <audio
@@ -362,7 +414,7 @@ function BlogView() {
         )}
 
         {/* AI-Generated Blog Content */}
-        <div className="card">
+        <div className="card" id="travel-story-section">
           <h2>Travel Story</h2>
           <div style={{ lineHeight: '1.6' }}>
             {renderBlogContent(blog?.blog_content)}
