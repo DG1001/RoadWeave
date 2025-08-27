@@ -51,6 +51,9 @@ function PublicBlogView() {
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [contentPieces, setContentPieces] = useState([]);
   const [filteredContentPieces, setFilteredContentPieces] = useState([]);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
 
   useEffect(() => {
     loadBlogData();
@@ -58,6 +61,27 @@ function PublicBlogView() {
     loadCalendarData();
     loadContentPieces();
   }, [token]);
+
+  // Scroll detection for sticky header
+  useEffect(() => {
+    let timeoutId = null;
+    
+    const handleScroll = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      timeoutId = setTimeout(() => {
+        const scrollTop = window.scrollY;
+        setIsScrolled(scrollTop > 100);
+      }, 50); // Debounce scroll events
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, []);
 
   // Update filtered entries and content when entries or selected date changes
   useEffect(() => {
@@ -512,6 +536,63 @@ function PublicBlogView() {
     }
   };
 
+  // Unified refresh function
+  const refreshAllData = async () => {
+    if (isRefreshing) return; // Prevent double refresh
+    
+    setIsRefreshing(true);
+    
+    // Store current scroll position
+    const scrollPosition = window.scrollY;
+    
+    try {
+      // Load all data in parallel
+      await Promise.all([
+        loadBlogData(),
+        loadEntries(),
+        loadCalendarData(),
+        loadContentPieces()
+      ]);
+      
+      // Show success feedback
+      setShowRefreshFeedback(true);
+      setTimeout(() => setShowRefreshFeedback(false), 2000);
+      
+      // Restore scroll position after a brief delay to allow content to render
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Refresh failed:', error);
+      // Still restore scroll position on error
+      setTimeout(() => {
+        window.scrollTo(0, scrollPosition);
+      }, 100);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Handle banner click
+  const handleBannerClick = () => {
+    refreshAllData();
+  };
+
+  // Update body class for sticky header padding
+  useEffect(() => {
+    if (isScrolled) {
+      document.body.classList.add('header-sticky');
+    } else {
+      document.body.classList.remove('header-sticky');
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      document.body.classList.remove('header-sticky');
+    };
+  }, [isScrolled]);
+
   if (loading) {
     return (
       <div className="container">
@@ -532,14 +613,28 @@ function PublicBlogView() {
 
   return (
     <div>
-      <div className="header">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px', marginBottom: '10px' }}>
-          <img src="/logo.png" alt="RoadWeave" style={{ width: '40px', height: '40px' }} />
-          <h1>{blog?.trip_name || 'Travel Blog'}</h1>
+      <div 
+        className={`header ${isScrolled ? 'sticky' : ''}`}
+        onClick={handleBannerClick}
+        title="Click to refresh blog content"
+      >
+        <div className="header-content">
+          <div className="header-row">
+            <img 
+              src="/logo.png" 
+              alt="RoadWeave" 
+              className="header-logo"
+            />
+            <h1>{blog?.trip_name || 'Travel Blog'}</h1>
+            {isRefreshing && <div className="loading-spinner"></div>}
+          </div>
+          <p className="header-description">
+            {blog?.description}
+          </p>
+          <div className={`refresh-feedback ${showRefreshFeedback ? 'show' : ''}`}>
+            Updated!
+          </div>
         </div>
-        <p style={{ margin: 0, textAlign: 'center' }}>
-          {blog?.description}
-        </p>
       </div>
 
       <div className="container">

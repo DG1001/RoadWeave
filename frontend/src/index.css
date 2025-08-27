@@ -77,11 +77,114 @@ code {
   color: white;
   padding: 1rem 0;
   margin-bottom: 2rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.header:hover {
+  background-color: #495057;
+}
+
+.header.sticky {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 0.75rem 0;
+  margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .header h1 {
   margin: 0;
   text-align: center;
+  transition: font-size 0.3s ease;
+}
+
+.header.sticky h1 {
+  font-size: 1.25rem;
+}
+
+.header .header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header .header-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 10px;
+  transition: margin-bottom 0.3s ease;
+}
+
+.header.sticky .header-row {
+  margin-bottom: 0;
+}
+
+.header .header-logo {
+  width: 40px;
+  height: 40px;
+  transition: all 0.3s ease;
+}
+
+.header.sticky .header-logo {
+  width: 30px;
+  height: 30px;
+}
+
+.header .header-description {
+  margin: 0;
+  text-align: center;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.header.sticky .header-description {
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.header .loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.header .refresh-feedback {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  background: rgba(40, 167, 69, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.header .refresh-feedback.show {
+  opacity: 1;
+}
+
+/* Add body padding when header is sticky to prevent content jump */
+body.header-sticky {
+  padding-top: 80px;
 }
 
 .error {
