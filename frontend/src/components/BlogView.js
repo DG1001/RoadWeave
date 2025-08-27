@@ -297,6 +297,20 @@ function BlogView() {
         }
       }
 
+      // Add timestamp metadata for this piece
+      elements.push(
+        <div key={`timestamp-${piece.id}`} style={{
+          textAlign: 'right',
+          marginTop: '10px',
+          marginBottom: '15px',
+          fontSize: '0.85em',
+          color: '#666',
+          fontStyle: 'italic'
+        }}>
+          🕒 {formatDate(piece.timestamp)}
+        </div>
+      );
+
       // Add separator between pieces (except for the last one)
       if (index < sortedPieces.length - 1) {
         elements.push(
@@ -484,7 +498,13 @@ function BlogView() {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString(undefined, {
+      year: 'numeric',
+      month: 'short', 
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit'
+    });
   };
 
   const getFileUrl = (filename) => {

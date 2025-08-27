@@ -505,7 +505,7 @@ def create_content_piece(trip, new_entry):
         {"If this is an audio message, use the transcription to capture the traveler's voice and emotions in your blog text. " if audio_transcription else ""}
         If GPS location is available, try to reference the general area or setting contextually, but do NOT include specific coordinates in your response.
         Focus on creating engaging narrative content rather than technical details.
-        Write in a friendly, travel blog style in {language_name}. Start the entry with the date and time.
+        Write in a friendly, travel blog style in {language_name}. Do NOT include timestamps or dates in your response.
         {photo_instruction}
         """
         
