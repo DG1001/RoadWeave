@@ -100,7 +100,7 @@ class DatabaseExplorer:
         return cursor.fetchall()
 
 
-def print_table_data(rows: List[sqlite3.Row], columns: List[str]):
+def print_table_data(rows: List[sqlite3.Row], columns: List[str], show_row_numbers: bool = False):
     if not rows:
         print("No data found.")
         return
@@ -113,20 +113,111 @@ def print_table_data(rows: List[sqlite3.Row], columns: List[str]):
                 max_width = max(max_width, len(str(row[col])))
         col_widths.append(min(max_width, 50))
     
-    header = " | ".join(col.ljust(width) for col, width in zip(columns, col_widths))
-    separator = "-+-".join("-" * width for width in col_widths)
+    if show_row_numbers:
+        row_num_width = len(str(len(rows)))
+        header = f"{'#'.ljust(row_num_width)} | " + " | ".join(col.ljust(width) for col, width in zip(columns, col_widths))
+        separator = "-" * row_num_width + "-+-" + "-+-".join("-" * width for width in col_widths)
+    else:
+        header = " | ".join(col.ljust(width) for col, width in zip(columns, col_widths))
+        separator = "-+-".join("-" * width for width in col_widths)
     
     print(header)
     print(separator)
     
-    for row in rows:
+    for i, row in enumerate(rows):
         row_data = []
         for col, width in zip(columns, col_widths):
             value = str(row[col]) if row[col] is not None else "NULL"
             if len(value) > width:
                 value = value[:width-3] + "..."
             row_data.append(value.ljust(width))
-        print(" | ".join(row_data))
+        
+        if show_row_numbers:
+            print(f"{str(i+1).ljust(row_num_width)} | " + " | ".join(row_data))
+        else:
+            print(" | ".join(row_data))
+
+
+def show_detailed_content(content: str, title: str = "Detailed Content"):
+    """Show detailed content with pagination"""
+    if not content:
+        print("No content to display.")
+        input("Press Enter to continue...")
+        return
+    
+    lines = content.split('\n')
+    page_size = 20
+    current_page = 0
+    total_pages = (len(lines) + page_size - 1) // page_size
+    
+    while True:
+        clear_screen()
+        print(f"{title}")
+        print("=" * len(title))
+        print(f"Page {current_page + 1} of {total_pages} | Total lines: {len(lines)}")
+        print("-" * 60)
+        
+        start_line = current_page * page_size
+        end_line = min(start_line + page_size, len(lines))
+        
+        for i in range(start_line, end_line):
+            print(f"{i+1:4d}: {lines[i]}")
+        
+        print("-" * 60)
+        if total_pages > 1:
+            print("Navigation: ↑/↓ for pages, 'q'/ESC to exit")
+        else:
+            print("Press 'q'/ESC to exit")
+        
+        key = get_key()
+        
+        if key == Keys.Q.value or key == Keys.ESC.value:
+            break
+        elif key == Keys.UP.value and current_page > 0:
+            current_page -= 1
+        elif key == Keys.DOWN.value and current_page < total_pages - 1:
+            current_page += 1
+
+
+def select_row_and_column(explorer: DatabaseExplorer, table_name: str, rows: List[sqlite3.Row], columns: List[str]):
+    """Allow user to select a row and view detailed column content"""
+    if not rows:
+        print("No rows to select from.")
+        input("Press Enter to continue...")
+        return
+    
+    selected_row = 0
+    
+    while True:
+        clear_screen()
+        print(f"SELECT ROW FROM {table_name} (showing {len(rows)} rows)")
+        print("=" * 60)
+        print_table_data(rows, columns, show_row_numbers=True)
+        print("\n" + "-" * 60)
+        print(f"Selected row: {selected_row + 1}")
+        print("Navigation: ↑/↓ to select row, Enter to view details, 'q'/ESC to exit")
+        
+        key = get_key()
+        
+        if key == Keys.Q.value or key == Keys.ESC.value:
+            break
+        elif key == Keys.UP.value and selected_row > 0:
+            selected_row -= 1
+        elif key == Keys.DOWN.value and selected_row < len(rows) - 1:
+            selected_row += 1
+        elif key == Keys.ENTER.value:
+            selected_row_data = rows[selected_row]
+            
+            # Show column selection menu
+            column_options = [f"{col}: {str(selected_row_data[col])[:50]}{'...' if len(str(selected_row_data[col])) > 50 else ''}" for col in columns]
+            column_options.append("Back to row selection")
+            
+            column_choice = navigate_menu(column_options, f"Select column to view in detail (Row {selected_row + 1}):")
+            
+            if column_choice != -1 and column_choice < len(columns):
+                selected_column = columns[column_choice]
+                content = str(selected_row_data[selected_column]) if selected_row_data[selected_column] is not None else "NULL"
+                show_detailed_content(content, f"Row {selected_row + 1}, Column '{selected_column}'")
 
 
 def navigate_menu(options: List[str], title: str = "") -> int:
@@ -167,12 +258,13 @@ def show_table_data_with_navigation(explorer: DatabaseExplorer, table_name: str)
             "View last 10 rows", 
             "View specific rows (with offset)",
             "View all rows",
+            "Browse rows and view column details",
             "Back to table selection"
         ]
         
         choice = navigate_menu(options, f"Options for {table_name}:")
         
-        if choice == -1 or choice == 4:  # Quit or Back
+        if choice == -1 or choice == 5:  # Quit or Back
             break
         elif choice == 0:  # First 10 rows
             rows = explorer.get_table_data(table_name, 10, 0)
@@ -214,6 +306,11 @@ def show_table_data_with_navigation(explorer: DatabaseExplorer, table_name: str)
             print(f"All rows of {table_name}:")
             print_table_data(rows, columns)
             input("\nPress Enter to continue...")
+        elif choice == 4:  # Browse rows and view details
+            # Get a reasonable number of rows for browsing
+            limit = min(50, total_rows)  # Show max 50 rows for browsing
+            rows = explorer.get_table_data(table_name, limit, 0)
+            select_row_and_column(explorer, table_name, rows, columns)
 
 
 def main():
