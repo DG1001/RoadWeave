@@ -137,6 +137,19 @@ class Entry(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     filename = db.Column(db.String(255))  # For uploaded files
 
+class TripContent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    trip_id = db.Column(db.Integer, db.ForeignKey('trip.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    generated_content = db.Column(db.Text, nullable=False)  # AI-generated markdown content
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    original_text = db.Column(db.Text)  # Original user input that prompted this generation
+    entry_ids = db.Column(db.Text)  # JSON array of related entry IDs
+    content_date = db.Column(db.Date, nullable=False)  # Date for calendar grouping (extracted from timestamp)
+    
+    trip = db.relationship('Trip', backref=db.backref('content_pieces', lazy=True, cascade='all, delete-orphan'))
+
 def generate_random_password(length=12):
     """Generate a secure random password"""
     characters = string.ascii_letters + string.digits + "!@#$%^&*"
@@ -417,14 +430,10 @@ LANGUAGE_NAMES = {
 }
 
 # AI Integration
-def generate_blog_update(trip, new_entry):
+def create_content_piece(trip, new_entry):
+    """Create a new TripContent record for the given entry"""
     try:
         model = genai.GenerativeModel('gemini-2.0-flash')
-        
-        # Prepare context
-        existing_blog = trip.blog_content or "This is the beginning of a travel blog."
-        # Prepare location info for AI context (not for direct inclusion in text)
-        location_info = f"Location available: {new_entry.latitude}, {new_entry.longitude}" if new_entry.latitude and new_entry.longitude else "No location data"
         
         # Get language name for the prompt
         language_name = LANGUAGE_NAMES.get(trip.blog_language, 'English')
@@ -461,12 +470,15 @@ def generate_blog_update(trip, new_entry):
         
         # Build enhanced content description
         content_description = new_entry.content
+        original_text = new_entry.content
+        
         if photo_analysis:
             content_description = f"Photo Analysis: {photo_analysis}"
             if new_entry.content and new_entry.content != "Photo upload":
                 content_description += f"\nUser Comment: {new_entry.content}"
         elif audio_transcription:
             content_description = f"Voice Message Transcription: {audio_transcription}"
+            original_text = audio_transcription
         
         # Prepare photo placement instruction
         photo_instruction = ""
@@ -476,12 +488,9 @@ def generate_blog_update(trip, new_entry):
         """
         
         prompt = f"""
-        You are helping to incrementally update a travel blog for a trip called "{trip.name}".
+        You are creating a travel blog entry for a trip called "{trip.name}".
         
         IMPORTANT: Write your response in {language_name} language.
-        
-        Current blog content:
-        {existing_blog}
         
         New entry details:
         - Entry ID: {new_entry.id}
@@ -491,21 +500,55 @@ def generate_blog_update(trip, new_entry):
         - Time: {format_timestamp_local(new_entry.timestamp)}
         {"- GPS location data is available" if new_entry.latitude and new_entry.longitude else "- No GPS location data"}
         
-        Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
+        Please create an engaging paragraph (2-3 sentences) about this entry for the travel blog IN {language_name.upper()}. 
         {"If this is a photo, use the photo analysis to create vivid, descriptive content about what's shown in the image. " if photo_analysis else ""}
         {"If this is an audio message, use the transcription to capture the traveler's voice and emotions in your blog text. " if audio_transcription else ""}
         If GPS location is available, try to reference the general area or setting contextually, but do NOT include specific coordinates in your response.
         Focus on creating engaging narrative content rather than technical details.
-        Do NOT regenerate the entire blog - just provide the new content to insert at the top (oldest entry is at the bottom).
         Write in a friendly, travel blog style in {language_name}. Start the entry with the date and time.
         {photo_instruction}
         """
         
         response = model.generate_content(prompt)
-        return response.text.strip()
+        generated_content = response.text.strip()
+        
+        # Create TripContent record
+        trip_content = TripContent(
+            trip_id=trip.id,
+            timestamp=new_entry.timestamp,
+            generated_content=generated_content,
+            latitude=new_entry.latitude,
+            longitude=new_entry.longitude,
+            original_text=original_text,
+            entry_ids=json.dumps([new_entry.id]),
+            content_date=new_entry.timestamp.date()
+        )
+        
+        db.session.add(trip_content)
+        db.session.commit()
+        
+        print(f"✅ Created TripContent record {trip_content.id} for entry {new_entry.id}")
+        return trip_content
+        
     except Exception as e:
         print(f"AI generation error: {e}")
-        return f"\n\n**{format_timestamp_local(new_entry.timestamp)}** - {new_entry.traveler.name} shared a {new_entry.content_type}" + (f": {new_entry.content}" if new_entry.content else "") + "."
+        # Create fallback content
+        fallback_content = f"**{format_timestamp_local(new_entry.timestamp)}** - {new_entry.traveler.name} shared a {new_entry.content_type}" + (f": {new_entry.content}" if new_entry.content else "") + "."
+        
+        trip_content = TripContent(
+            trip_id=trip.id,
+            timestamp=new_entry.timestamp,
+            generated_content=fallback_content,
+            latitude=new_entry.latitude,
+            longitude=new_entry.longitude,
+            original_text=new_entry.content,
+            entry_ids=json.dumps([new_entry.id]),
+            content_date=new_entry.timestamp.date()
+        )
+        
+        db.session.add(trip_content)
+        db.session.commit()
+        return trip_content
 
 # Routes
 @app.route('/api/admin/login', methods=['POST'])
@@ -647,23 +690,11 @@ def create_entry(token):
     db.session.add(entry)
     db.session.commit()
     
-    # Generate AI blog update
+    # Create AI-generated content piece
     try:
-        ai_update = generate_blog_update(traveler.trip, entry)
-        if ai_update:
-            # Prepend new content to show latest entries first
-            header_end = traveler.trip.blog_content.find('\n\n') 
-            if header_end != -1:
-                # Insert after the header (trip name and description)
-                header = traveler.trip.blog_content[:header_end + 2]
-                content = traveler.trip.blog_content[header_end + 2:]
-                traveler.trip.blog_content = f"{header}{ai_update}\n\n{content}"
-            else:
-                # If no header found, just prepend
-                traveler.trip.blog_content = f"{ai_update}\n\n{traveler.trip.blog_content}"
-            db.session.commit()
+        create_content_piece(traveler.trip, entry)
     except Exception as e:
-        print(f"AI update failed: {e}")
+        print(f"Content piece creation failed: {e}")
     
     return jsonify({
         'id': entry.id,
@@ -712,22 +743,95 @@ def regenerate_blog(trip_id):
         return jsonify({'error': 'Admin access required'}), 403
     
     trip = Trip.query.get_or_404(trip_id)
-    entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.desc()).all()
+    entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.asc()).all()
     
-    # Reset blog content
+    # Clear existing content pieces
+    TripContent.query.filter_by(trip_id=trip_id).delete()
+    
+    # Reset blog content (keep for backwards compatibility during transition)
     trip.blog_content = f"# {trip.name}\n\n{trip.description}\n"
     
-    # Process each entry
+    # Process each entry to create new content pieces
+    created_count = 0
     for entry in entries:
         try:
-            ai_update = generate_blog_update(trip, entry)
-            if ai_update:
-                trip.blog_content += f"\n\n{ai_update}"
+            create_content_piece(trip, entry)
+            created_count += 1
         except Exception as e:
-            print(f"AI update failed for entry {entry.id}: {e}")
+            print(f"Content piece creation failed for entry {entry.id}: {e}")
     
     db.session.commit()
-    return jsonify({'message': 'Blog regenerated successfully'})
+    return jsonify({
+        'message': f'Blog regenerated successfully. Created {created_count} content pieces from {len(entries)} entries.'
+    })
+
+@app.route('/api/admin/trips/<int:trip_id>/migrate-content', methods=['POST'])
+@jwt_required()
+def migrate_existing_content(trip_id):
+    """Migrate existing blog_content to TripContent records"""
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.asc()).all()
+    
+    # Check if migration is needed
+    if not trip.blog_content or trip.blog_content.strip() == f"# {trip.name}\n\n{trip.description}":
+        return jsonify({'message': 'No content to migrate or content already empty.'})
+    
+    # Check if TripContent records already exist
+    existing_content_count = TripContent.query.filter_by(trip_id=trip_id).count()
+    if existing_content_count > 0:
+        return jsonify({
+            'error': f'Trip already has {existing_content_count} content pieces. Use regenerate-blog to recreate them.'
+        }), 400
+    
+    try:
+        # Simple migration: create one content piece per entry based on timestamp
+        # This is a best-effort approach since we can't perfectly parse the monolithic content
+        migrated_count = 0
+        
+        for entry in entries:
+            # Create a simple content piece for each entry
+            content_text = f"**{format_timestamp_local(entry.timestamp)}** - {entry.traveler.name} shared a {entry.content_type}"
+            if entry.content:
+                content_text += f": {entry.content}"
+            
+            # Add photo marker if it's a photo
+            if entry.content_type == 'photo' and entry.filename:
+                content_text += f"\n\n[PHOTO:{entry.id}]"
+            
+            # Create TripContent record
+            trip_content = TripContent(
+                trip_id=trip.id,
+                timestamp=entry.timestamp,
+                generated_content=content_text,
+                latitude=entry.latitude,
+                longitude=entry.longitude,
+                original_text=entry.content,
+                entry_ids=json.dumps([entry.id]),
+                content_date=entry.timestamp.date()
+            )
+            
+            db.session.add(trip_content)
+            migrated_count += 1
+        
+        # Backup the original blog_content
+        trip.blog_content = f"# {trip.name}\n\n{trip.description}\n\n<!-- Original content migrated to individual pieces -->"
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Migration completed successfully. Created {migrated_count} content pieces from {len(entries)} entries.',
+            'migrated_entries': migrated_count,
+            'total_entries': len(entries)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'error': f'Migration failed: {str(e)}'
+        }), 500
 
 @app.route('/api/admin/trips/<int:trip_id>/language', methods=['PUT'])
 @jwt_required()
@@ -827,6 +931,111 @@ def get_public_entries(token):
         'filename': entry.filename
     } for entry in entries])
 
+@app.route('/api/public/<token>/content')
+def get_public_trip_content(token):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    content_pieces = TripContent.query.filter_by(trip_id=trip.id).order_by(TripContent.timestamp.desc()).all()
+    
+    return jsonify([{
+        'id': content.id,
+        'timestamp': timestamp_to_iso(content.timestamp),
+        'generated_content': content.generated_content,
+        'latitude': content.latitude,
+        'longitude': content.longitude,
+        'original_text': content.original_text,
+        'entry_ids': json.loads(content.entry_ids) if content.entry_ids else [],
+        'content_date': content.content_date.isoformat()
+    } for content in content_pieces])
+
+@app.route('/api/public/<token>/content/calendar')
+def get_public_calendar_data(token):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    # Get all entries grouped by date
+    entries = Entry.query.filter_by(trip_id=trip.id).all()
+    calendar_data = {}
+    
+    for entry in entries:
+        entry_date = entry.timestamp.date().isoformat()
+        if entry_date not in calendar_data:
+            calendar_data[entry_date] = {
+                'date': entry_date,
+                'text_count': 0,
+                'photo_count': 0,
+                'audio_count': 0,
+                'total_count': 0
+            }
+        
+        if entry.content_type == 'text':
+            calendar_data[entry_date]['text_count'] += 1
+        elif entry.content_type == 'photo':
+            calendar_data[entry_date]['photo_count'] += 1
+        elif entry.content_type == 'audio':
+            calendar_data[entry_date]['audio_count'] += 1
+        
+        calendar_data[entry_date]['total_count'] += 1
+    
+    return jsonify({
+        'calendar_data': list(calendar_data.values()),
+        'date_range': {
+            'start': min(calendar_data.keys()) if calendar_data else None,
+            'end': max(calendar_data.keys()) if calendar_data else None
+        }
+    })
+
+@app.route('/api/public/<token>/content/date/<date>')
+def get_public_content_by_date(token, date):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    try:
+        # Parse the date string
+        from datetime import datetime
+        target_date = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    # Get entries for the specific date
+    entries = Entry.query.filter(
+        Entry.trip_id == trip.id,
+        db.func.date(Entry.timestamp) == target_date
+    ).order_by(Entry.timestamp.asc()).all()
+    
+    # Get content pieces for the specific date
+    content_pieces = TripContent.query.filter_by(
+        trip_id=trip.id, 
+        content_date=target_date
+    ).order_by(TripContent.timestamp.asc()).all()
+    
+    return jsonify({
+        'date': date,
+        'entries': [{
+            'id': entry.id,
+            'content_type': entry.content_type,
+            'content': entry.content,
+            'latitude': entry.latitude,
+            'longitude': entry.longitude,
+            'timestamp': timestamp_to_iso(entry.timestamp),
+            'traveler_name': entry.traveler.name,
+            'filename': entry.filename
+        } for entry in entries],
+        'content_pieces': [{
+            'id': content.id,
+            'timestamp': timestamp_to_iso(content.timestamp),
+            'generated_content': content.generated_content,
+            'latitude': content.latitude,
+            'longitude': content.longitude,
+            'original_text': content.original_text,
+            'entry_ids': json.loads(content.entry_ids) if content.entry_ids else []
+        } for content in content_pieces]
+    })
+
 @app.route('/api/admin/entries/<int:entry_id>/coordinates', methods=['PUT'])
 @jwt_required()
 def update_entry_coordinates(entry_id):
@@ -860,6 +1069,116 @@ def update_entry_coordinates(entry_id):
         'id': entry.id,
         'latitude': entry.latitude,
         'longitude': entry.longitude
+    })
+
+@app.route('/api/trips/<int:trip_id>/content', methods=['GET'])
+@jwt_required()
+def get_trip_content(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    content_pieces = TripContent.query.filter_by(trip_id=trip_id).order_by(TripContent.timestamp.desc()).all()
+    
+    return jsonify([{
+        'id': content.id,
+        'timestamp': timestamp_to_iso(content.timestamp),
+        'generated_content': content.generated_content,
+        'latitude': content.latitude,
+        'longitude': content.longitude,
+        'original_text': content.original_text,
+        'entry_ids': json.loads(content.entry_ids) if content.entry_ids else [],
+        'content_date': content.content_date.isoformat()
+    } for content in content_pieces])
+
+@app.route('/api/trips/<int:trip_id>/content/calendar', methods=['GET'])
+@jwt_required()
+def get_calendar_data(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    
+    # Get all entries grouped by date
+    entries = Entry.query.filter_by(trip_id=trip_id).all()
+    calendar_data = {}
+    
+    for entry in entries:
+        entry_date = entry.timestamp.date().isoformat()
+        if entry_date not in calendar_data:
+            calendar_data[entry_date] = {
+                'date': entry_date,
+                'text_count': 0,
+                'photo_count': 0,
+                'audio_count': 0,
+                'total_count': 0
+            }
+        
+        if entry.content_type == 'text':
+            calendar_data[entry_date]['text_count'] += 1
+        elif entry.content_type == 'photo':
+            calendar_data[entry_date]['photo_count'] += 1
+        elif entry.content_type == 'audio':
+            calendar_data[entry_date]['audio_count'] += 1
+        
+        calendar_data[entry_date]['total_count'] += 1
+    
+    return jsonify({
+        'calendar_data': list(calendar_data.values()),
+        'date_range': {
+            'start': min(calendar_data.keys()) if calendar_data else None,
+            'end': max(calendar_data.keys()) if calendar_data else None
+        }
+    })
+
+@app.route('/api/trips/<int:trip_id>/content/date/<date>', methods=['GET'])
+@jwt_required()
+def get_content_by_date(trip_id, date):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        # Parse the date string
+        from datetime import datetime
+        target_date = datetime.strptime(date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    
+    trip = Trip.query.get_or_404(trip_id)
+    
+    # Get entries for the specific date
+    entries = Entry.query.filter(
+        Entry.trip_id == trip_id,
+        db.func.date(Entry.timestamp) == target_date
+    ).order_by(Entry.timestamp.asc()).all()
+    
+    # Get content pieces for the specific date
+    content_pieces = TripContent.query.filter_by(
+        trip_id=trip_id, 
+        content_date=target_date
+    ).order_by(TripContent.timestamp.asc()).all()
+    
+    return jsonify({
+        'date': date,
+        'entries': [{
+            'id': entry.id,
+            'content_type': entry.content_type,
+            'content': entry.content,
+            'latitude': entry.latitude,
+            'longitude': entry.longitude,
+            'timestamp': timestamp_to_iso(entry.timestamp),
+            'traveler_name': entry.traveler.name,
+            'filename': entry.filename
+        } for entry in entries],
+        'content_pieces': [{
+            'id': content.id,
+            'timestamp': timestamp_to_iso(content.timestamp),
+            'generated_content': content.generated_content,
+            'latitude': content.latitude,
+            'longitude': content.longitude,
+            'original_text': content.original_text,
+            'entry_ids': json.loads(content.entry_ids) if content.entry_ids else []
+        } for content in content_pieces]
     })
 
 @app.route('/uploads/<filename>')
@@ -926,24 +1245,45 @@ def serve_react_app(path):
     })
 
 def migrate_database():
-    """Apply database migrations for new columns"""
+    """Apply database migrations for new columns and tables"""
     try:
         from sqlalchemy import inspect, text
         
-        # Check if columns exist
         inspector = inspect(db.engine)
-        trip_columns = [col['name'] for col in inspector.get_columns('trip')]
+        existing_tables = inspector.get_table_names()
         
+        # Check if columns exist in existing tables
         migrations_needed = []
-        if 'blog_language' not in trip_columns:
-            migrations_needed.append('ALTER TABLE trip ADD COLUMN blog_language VARCHAR(10) DEFAULT "en"')
-        if 'public_enabled' not in trip_columns:
-            migrations_needed.append('ALTER TABLE trip ADD COLUMN public_enabled BOOLEAN DEFAULT 0')
-        if 'public_token' not in trip_columns:
-            migrations_needed.append('ALTER TABLE trip ADD COLUMN public_token VARCHAR(100)')
+        
+        if 'trip' in existing_tables:
+            trip_columns = [col['name'] for col in inspector.get_columns('trip')]
+            if 'blog_language' not in trip_columns:
+                migrations_needed.append('ALTER TABLE trip ADD COLUMN blog_language VARCHAR(10) DEFAULT "en"')
+            if 'public_enabled' not in trip_columns:
+                migrations_needed.append('ALTER TABLE trip ADD COLUMN public_enabled BOOLEAN DEFAULT 0')
+            if 'public_token' not in trip_columns:
+                migrations_needed.append('ALTER TABLE trip ADD COLUMN public_token VARCHAR(100)')
+        
+        # Check if trip_content table exists, create if not
+        if 'trip_content' not in existing_tables:
+            print("🔄 Creating trip_content table...")
+            migrations_needed.append('''
+                CREATE TABLE trip_content (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    trip_id INTEGER NOT NULL,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    generated_content TEXT NOT NULL,
+                    latitude FLOAT,
+                    longitude FLOAT,
+                    original_text TEXT,
+                    entry_ids TEXT,
+                    content_date DATE NOT NULL,
+                    FOREIGN KEY (trip_id) REFERENCES trip (id) ON DELETE CASCADE
+                )
+            ''')
         
         if migrations_needed:
-            print(f"🔄 Migrating database: Adding {len(migrations_needed)} column(s)...")
+            print(f"🔄 Migrating database: Applying {len(migrations_needed)} migration(s)...")
             with db.engine.connect() as conn:
                 for migration in migrations_needed:
                     conn.execute(text(migration))

@@ -6,6 +6,7 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import 'leaflet/dist/leaflet.css';
 import { getApiUrl } from '../config/api';
+import CalendarView from './CalendarView';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -45,11 +46,45 @@ function PublicBlogView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // Default to NYC
+  const [calendarData, setCalendarData] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [filteredEntries, setFilteredEntries] = useState([]);
+  const [contentPieces, setContentPieces] = useState([]);
+  const [filteredContentPieces, setFilteredContentPieces] = useState([]);
 
   useEffect(() => {
     loadBlogData();
     loadEntries();
+    loadCalendarData();
+    loadContentPieces();
   }, [token]);
+
+  // Update filtered entries and content when entries or selected date changes
+  useEffect(() => {
+    if (selectedDate) {
+      // Filter entries for the selected date
+      const filteredEntries = entries.filter(entry => {
+        // Create date in local timezone to avoid UTC offset issues
+        const entryDate = new Date(entry.timestamp);
+        const year = entryDate.getFullYear();
+        const month = String(entryDate.getMonth() + 1).padStart(2, '0');
+        const day = String(entryDate.getDate()).padStart(2, '0');
+        const entryDateString = `${year}-${month}-${day}`;
+        return entryDateString === selectedDate;
+      });
+      setFilteredEntries(filteredEntries);
+
+      // Filter content pieces for the selected date
+      const filteredContent = contentPieces.filter(content => {
+        return content.content_date === selectedDate;
+      });
+      setFilteredContentPieces(filteredContent);
+    } else {
+      // Show all entries and content
+      setFilteredEntries(entries);
+      setFilteredContentPieces(contentPieces);
+    }
+  }, [entries, selectedDate, contentPieces]);
 
   const loadBlogData = async () => {
     try {
@@ -82,7 +117,184 @@ function PublicBlogView() {
     }
   };
 
+  const loadCalendarData = async () => {
+    try {
+      const response = await axios.get(getApiUrl(`/api/public/${token}/content/calendar`));
+      setCalendarData(response.data);
+    } catch (err) {
+      console.error('Failed to load calendar data:', err);
+      // Don't show error to user - calendar is optional
+    }
+  };
+
+  const loadContentPieces = async () => {
+    try {
+      const response = await axios.get(getApiUrl(`/api/public/${token}/content`));
+      setContentPieces(response.data);
+    } catch (err) {
+      console.error('Failed to load content pieces:', err);
+      // Fallback to empty array - we'll use the old blog_content method
+      setContentPieces([]);
+    }
+  };
+
+  const handleDateSelect = (date) => {
+    if (selectedDate === date) {
+      // Clicking the same date deselects it
+      setSelectedDate(null);
+    } else {
+      setSelectedDate(date);
+    }
+  };
+
+  const clearDateFilter = () => {
+    setSelectedDate(null);
+  };
+
+  const renderContentPieces = (pieces) => {
+    if (!pieces || pieces.length === 0) {
+      return <p>No content pieces available for the selected date.</p>;
+    }
+
+    // Create a mapping of photo entries by ID for quick lookup
+    const photoEntriesById = {};
+    entries.filter(entry => entry.content_type === 'photo' && entry.filename)
+      .forEach(entry => {
+        photoEntriesById[entry.id] = entry;
+      });
+
+    // Sort pieces by timestamp (newest first for blog display)
+    const sortedPieces = [...pieces].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    const elements = [];
+
+    sortedPieces.forEach((piece, index) => {
+      // Process the content and replace photo markers
+      const content = piece.generated_content;
+      const lines = content.split('\n');
+      
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+        
+        // Check for photo markers in the line
+        const photoMarkerRegex = /\[PHOTO:(\d+)\]/g;
+        const matches = [...line.matchAll(photoMarkerRegex)];
+        
+        if (matches.length > 0) {
+          // Split line by photo markers and insert photos
+          let lastIndex = 0;
+          let lineElements = [];
+          
+          matches.forEach((match) => {
+            const [fullMatch, entryId] = match;
+            const photoEntry = photoEntriesById[parseInt(entryId)];
+            
+            // Add text before the marker
+            if (match.index > lastIndex) {
+              const textBefore = line.substring(lastIndex, match.index);
+              if (textBefore.trim()) {
+                lineElements.push(textBefore);
+              }
+            }
+            
+            // Add the photo if it exists
+            if (photoEntry) {
+              elements.push(
+                ...lineElements.map((text, idx) => (
+                  <ReactMarkdown key={`piece-${piece.id}-line-${i}-text-${idx}`}>{text}</ReactMarkdown>
+                ))
+              );
+              lineElements = []; // Reset line elements
+              
+              elements.push(
+                <div id={`blog-entry-${photoEntry.id}`} key={`piece-${piece.id}-photo-${photoEntry.id}`} style={{ 
+                  margin: '15px 0', 
+                  textAlign: 'center',
+                  padding: '10px',
+                  backgroundColor: '#f9f9f9',
+                  borderRadius: '8px',
+                  border: '1px solid #e0e0e0',
+                  scrollMarginTop: '20px'
+                }}>
+                  <img
+                    src={getFileUrl(photoEntry.filename)}
+                    alt={`Photo by ${photoEntry.traveler_name}`}
+                    style={{ 
+                      maxWidth: '100%', 
+                      height: 'auto', 
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <div style={{ 
+                    marginTop: '8px', 
+                    fontSize: '0.9em', 
+                    color: '#666',
+                    fontStyle: 'italic'
+                  }}>
+                    📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+                    {photoEntry.content && photoEntry.content !== 'Photo upload' && (
+                      <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
+                        "{photoEntry.content}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+            
+            lastIndex = match.index + fullMatch.length;
+          });
+          
+          // Add remaining text after last marker
+          if (lastIndex < line.length) {
+            const textAfter = line.substring(lastIndex);
+            if (textAfter.trim()) {
+              lineElements.push(textAfter);
+            }
+          }
+          
+          // Add any remaining line elements
+          lineElements.forEach((text, idx) => {
+            if (text.trim()) {
+              elements.push(<ReactMarkdown key={`piece-${piece.id}-line-${i}-text-final-${idx}`}>{text}</ReactMarkdown>);
+            }
+          });
+        } else {
+          // No photo markers, render as markdown
+          if (line.trim()) {
+            elements.push(
+              <ReactMarkdown key={`piece-${piece.id}-line-${i}`}>
+                {line}
+              </ReactMarkdown>
+            );
+          } else {
+            elements.push(<br key={`piece-${piece.id}-line-${i}`} />);
+          }
+        }
+      }
+
+      // Add separator between pieces (except for the last one)
+      if (index < sortedPieces.length - 1) {
+        elements.push(
+          <div key={`separator-${piece.id}`} style={{ 
+            margin: '20px 0', 
+            borderTop: '1px solid #eee' 
+          }} />
+        );
+      }
+    });
+
+    return elements;
+  };
+
   const renderBlogContent = (content) => {
+    // Use new content pieces if available
+    if (filteredContentPieces && filteredContentPieces.length > 0) {
+      return renderContentPieces(filteredContentPieces);
+    }
+    
+    // Fall back to old blog_content format
     if (!content) return <p>No blog content generated yet.</p>;
     
     // Create a mapping of photo entries by ID for quick lookup
@@ -387,9 +599,51 @@ function PublicBlogView() {
           </div>
         )}
 
+        {/* Calendar View */}
+        <div className="card">
+          <h2>Calendar View</h2>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '15px' }}>
+            Click on any day to filter entries by date. 
+            {selectedDate && (
+              <>
+                {' '}Currently showing entries for {new Date(selectedDate).toLocaleDateString()}.{' '}
+                <button
+                  onClick={clearDateFilter}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#007bff',
+                    cursor: 'pointer',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Show all entries
+                </button>
+              </>
+            )}
+          </p>
+          {calendarData ? (
+            <CalendarView
+              calendarData={calendarData}
+              onDateSelect={handleDateSelect}
+              selectedDate={selectedDate}
+            />
+          ) : (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+              Loading calendar...
+            </div>
+          )}
+        </div>
+
         {/* AI-Generated Blog Content */}
         <div className="card" id="travel-story-section">
-          <h2>Travel Story</h2>
+          <h2>
+            {selectedDate ? (
+              <>Travel Story for {new Date(selectedDate).toLocaleDateString()}</>
+            ) : (
+              <>Travel Story</>
+            )}
+          </h2>
           <div style={{ lineHeight: '1.6' }}>
             {renderBlogContent(blog?.blog_content)}
           </div>
