@@ -304,13 +304,14 @@ function BlogView() {
       const travelerName = relatedEntry ? relatedEntry.traveler_name : 'Unknown';
       
       elements.push(
-        <div key={`timestamp-${piece.id}`} style={{
+        <div id={`content-piece-${piece.id}`} key={`timestamp-${piece.id}`} style={{
           textAlign: 'right',
           marginTop: '10px',
           marginBottom: '15px',
           fontSize: '0.85em',
           color: '#666',
-          fontStyle: 'italic'
+          fontStyle: 'italic',
+          scrollMarginTop: '20px'
         }}>
           👤 {travelerName} • 🕒 {formatDate(piece.timestamp)}
         </div>
@@ -516,23 +517,69 @@ function BlogView() {
     return getApiUrl(`/uploads/${filename}`);
   };
 
+  const hasEntryInBlog = (entry) => {
+    // Check if entry exists in current content pieces (filtered or all)
+    const currentContentPieces = filteredContentPieces.length > 0 ? filteredContentPieces : contentPieces;
+    
+    return currentContentPieces.some(piece => 
+      piece.entry_ids?.includes(entry.id) || 
+      piece.generated_content?.includes(`[PHOTO:${entry.id}]`)
+    );
+  };
+
   const hasPhotoInBlog = (entry) => {
-    if (!blog?.blog_content || entry.content_type !== 'photo') return false;
-    return blog.blog_content.includes(`[PHOTO:${entry.id}]`);
+    if (entry.content_type !== 'photo') return false;
+    return hasEntryInBlog(entry);
+  };
+
+  const scrollToEntry = (entryId, entryType) => {
+    // First check if the entry exists in current filtered content
+    const findContentPieceForEntry = (pieces) => {
+      return pieces.find(piece => piece.entry_ids?.includes(entryId));
+    };
+    
+    let targetContentPiece = findContentPieceForEntry(filteredContentPieces);
+    let targetElementId;
+    
+    // If not found in filtered content and we have a date filter, clear it
+    if (!targetContentPiece && selectedDate && contentPieces.length > 0) {
+      targetContentPiece = findContentPieceForEntry(contentPieces);
+      if (targetContentPiece) {
+        console.log('Clearing date filter to show selected entry...');
+        setSelectedDate(null);
+        // Wait for re-render then try again
+        setTimeout(() => scrollToEntry(entryId, entryType), 200);
+        return;
+      }
+    }
+    
+    // Determine target element ID based on entry type
+    if (entryType === 'photo') {
+      targetElementId = `blog-entry-${entryId}`;
+    } else if (targetContentPiece) {
+      targetElementId = `content-piece-${targetContentPiece.id}`;
+    }
+    
+    // Scroll to the target element
+    if (targetElementId) {
+      const element = document.getElementById(targetElementId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add highlight effect
+        const originalBg = element.style.backgroundColor;
+        const originalBorder = element.style.border;
+        element.style.backgroundColor = '#fff3cd';
+        element.style.border = '2px solid #ffc107';
+        setTimeout(() => {
+          element.style.backgroundColor = originalBg || '';
+          element.style.border = originalBorder || '';
+        }, 2000);
+      }
+    }
   };
 
   const scrollToPhotoInBlog = (entryId) => {
-    const element = document.getElementById(`blog-entry-${entryId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      // Add a brief highlight effect
-      element.style.backgroundColor = '#fff3cd';
-      element.style.border = '2px solid #ffc107';
-      setTimeout(() => {
-        element.style.backgroundColor = '#f9f9f9';
-        element.style.border = '1px solid #e0e0e0';
-      }, 2000);
-    }
+    scrollToEntry(entryId, 'photo');
   };
 
   const handleEditCoordinates = (entry) => {
@@ -636,7 +683,41 @@ function BlogView() {
                         <br />
                         <em>{entry.content_type}</em>
                         {entry.content_type === 'text' && (
-                          <p>{entry.content}</p>
+                          <div
+                            style={{
+                              cursor: hasEntryInBlog(entry) ? 'pointer' : 'default',
+                              padding: '8px',
+                              borderRadius: '4px',
+                              border: hasEntryInBlog(entry) ? '2px solid #007bff' : '1px solid transparent',
+                              backgroundColor: hasEntryInBlog(entry) ? '#f8f9ff' : 'transparent',
+                              marginTop: '5px',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onClick={hasEntryInBlog(entry) ? () => scrollToEntry(entry.id, 'text') : undefined}
+                            onMouseOver={(e) => {
+                              if (hasEntryInBlog(entry)) {
+                                e.target.style.backgroundColor = '#e6f2ff';
+                              }
+                            }}
+                            onMouseOut={(e) => {
+                              if (hasEntryInBlog(entry)) {
+                                e.target.style.backgroundColor = '#f8f9ff';
+                              }
+                            }}
+                          >
+                            <p style={{ margin: 0 }}>{entry.content}</p>
+                            {hasEntryInBlog(entry) && (
+                              <div style={{
+                                fontSize: '0.7em',
+                                color: '#007bff',
+                                textAlign: 'center',
+                                marginTop: '5px',
+                                fontStyle: 'italic'
+                              }}>
+                                Click to view in story
+                              </div>
+                            )}
+                          </div>
                         )}
                         {entry.content_type === 'photo' && entry.filename && (
                           <div>
@@ -677,12 +758,39 @@ function BlogView() {
                           </div>
                         )}
                         {entry.content_type === 'audio' && entry.filename && (
-                          <audio
-                            controls
-                            style={{ width: '100%', marginTop: '5px' }}
-                          >
-                            <source src={getFileUrl(entry.filename)} />
-                          </audio>
+                          <div>
+                            <audio
+                              controls
+                              style={{ width: '100%', marginTop: '5px' }}
+                            >
+                              <source src={getFileUrl(entry.filename)} />
+                            </audio>
+                            {hasEntryInBlog(entry) && (
+                              <button
+                                onClick={() => scrollToEntry(entry.id, 'audio')}
+                                style={{
+                                  width: '100%',
+                                  marginTop: '8px',
+                                  padding: '6px 12px',
+                                  backgroundColor: '#007bff',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8em',
+                                  transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseOver={(e) => {
+                                  e.target.style.backgroundColor = '#0056b3';
+                                }}
+                                onMouseOut={(e) => {
+                                  e.target.style.backgroundColor = '#007bff';
+                                }}
+                              >
+                                🎵 Jump to story
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </Popup>
