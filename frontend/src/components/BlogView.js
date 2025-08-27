@@ -298,6 +298,11 @@ function BlogView() {
       }
 
       // Add timestamp metadata for this piece
+      // Find traveler name from related entries
+      const relatedEntryIds = piece.entry_ids || [];
+      const relatedEntry = entries.find(entry => relatedEntryIds.includes(entry.id));
+      const travelerName = relatedEntry ? relatedEntry.traveler_name : 'Unknown';
+      
       elements.push(
         <div key={`timestamp-${piece.id}`} style={{
           textAlign: 'right',
@@ -307,7 +312,7 @@ function BlogView() {
           color: '#666',
           fontStyle: 'italic'
         }}>
-          🕒 {formatDate(piece.timestamp)}
+          👤 {travelerName} • 🕒 {formatDate(piece.timestamp)}
         </div>
       );
 
