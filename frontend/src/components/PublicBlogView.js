@@ -778,7 +778,20 @@ function PublicBlogView() {
     );
   }
 
-  const entriesWithLocation = entries.filter(entry => entry.latitude && entry.longitude);
+  // Filter entries with location based on selected date
+  let entriesWithLocation = entries.filter(entry => entry.latitude && entry.longitude);
+  
+  if (selectedDate) {
+    entriesWithLocation = entriesWithLocation.filter(entry => {
+      // Create date in local timezone to avoid UTC offset issues
+      const entryDate = new Date(entry.timestamp);
+      const year = entryDate.getFullYear();
+      const month = String(entryDate.getMonth() + 1).padStart(2, '0');
+      const day = String(entryDate.getDate()).padStart(2, '0');
+      const entryDateString = `${year}-${month}-${day}`;
+      return entryDateString === selectedDate;
+    });
+  }
 
   return (
     <div>
