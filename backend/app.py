@@ -494,10 +494,10 @@ def generate_blog_update(trip, new_entry):
         Please add a short, engaging paragraph (2-3 sentences) about this new entry to the blog IN {language_name.upper()}. 
         {"If this is a photo, use the photo analysis to create vivid, descriptive content about what's shown in the image. " if photo_analysis else ""}
         {"If this is an audio message, use the transcription to capture the traveler's voice and emotions in your blog text. " if audio_transcription else ""}
-        If GPS location is available, you may reference the general area or setting contextually, but do NOT include specific coordinates in your response.
+        If GPS location is available, try to reference the general area or setting contextually, but do NOT include specific coordinates in your response.
         Focus on creating engaging narrative content rather than technical details.
-        Do NOT regenerate the entire blog - just provide the new content to append.
-        Write in a friendly, travel blog style in {language_name}.
+        Do NOT regenerate the entire blog - just provide the new content to insert at the top (oldest entry is at the bottom).
+        Write in a friendly, travel blog style in {language_name}. Start the entry with the date and time.
         {photo_instruction}
         """
         
