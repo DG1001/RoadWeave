@@ -618,10 +618,9 @@ function BlogView() {
   };
 
   const hasEntryInBlog = (entry) => {
-    // Check if entry exists in current content pieces (filtered or all)
-    const currentContentPieces = filteredContentPieces.length > 0 ? filteredContentPieces : contentPieces;
-    
-    return currentContentPieces.some(piece => 
+    // Always check against ALL content pieces for map popup logic
+    // This ensures map popups always show clickable content regardless of date filter
+    return contentPieces.some(piece => 
       piece.entry_ids?.includes(entry.id) || 
       piece.generated_content?.includes(`[PHOTO:${entry.id}]`)
     );
@@ -647,8 +646,26 @@ function BlogView() {
       if (targetContentPiece) {
         console.log('Clearing date filter to show selected entry...');
         setSelectedDate(null);
-        // Wait for re-render then try again
-        setTimeout(() => scrollToEntry(entryId, entryType), 200);
+        // Wait longer and try multiple times to ensure DOM is updated
+        const attemptScroll = (attempts = 0) => {
+          if (attempts >= 10) {
+            console.warn('Failed to find target element after clearing date filter');
+            return;
+          }
+          
+          setTimeout(() => {
+            const testElement = document.getElementById(entryType === 'photo' ? `blog-entry-${entryId}` : `content-piece-${targetContentPiece.id}`);
+            if (testElement) {
+              // Element exists now, proceed with scrolling
+              scrollToEntry(entryId, entryType);
+            } else {
+              // Try again with exponential backoff
+              attemptScroll(attempts + 1);
+            }
+          }, 100 * Math.pow(1.5, attempts)); // 100ms, 150ms, 225ms, etc.
+        };
+        
+        attemptScroll();
         return;
       }
     }
