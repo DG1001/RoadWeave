@@ -35,6 +35,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [regeneratingTrips, setRegeneratingTrips] = useState(new Set());
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,19 +118,37 @@ function AdminDashboard() {
   };
 
   const regenerateBlog = async (tripId) => {
-    setLoading(true);
+    // Add trip to regenerating set
+    setRegeneratingTrips(prev => new Set([...prev, tripId]));
     setError('');
     setSuccess('');
 
     try {
-      await axios.post(getApiUrl(`/api/admin/trips/${tripId}/regenerate-blog`), {}, {
-        headers: getAuthHeaders()
+      const response = await axios.post(getApiUrl(`/api/admin/trips/${tripId}/regenerate-blog`), {}, {
+        headers: getAuthHeaders(),
+        timeout: 300000 // 5 minutes timeout for long operations
       });
-      setSuccess('Blog regenerated successfully!');
+      
+      // Show success message with details
+      const message = response.data?.message || 'Blog regenerated successfully!';
+      setSuccess(message);
+      
+      // Auto-clear success message after 10 seconds for long messages
+      setTimeout(() => setSuccess(''), 10000);
+      
     } catch (err) {
-      setError('Failed to regenerate blog');
+      if (err.code === 'ECONNABORTED') {
+        setError('Regeneration is taking longer than expected, but continues in the background. Please check back in a few minutes.');
+      } else {
+        setError(err.response?.data?.error || 'Failed to regenerate blog');
+      }
     } finally {
-      setLoading(false);
+      // Remove trip from regenerating set
+      setRegeneratingTrips(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tripId);
+        return newSet;
+      });
     }
   };
 
@@ -296,6 +315,16 @@ function AdminDashboard() {
                     <p>{trip.description}</p>
                     <small>
                       {trip.traveler_count} travelers, {trip.entry_count} entries
+                      {regeneratingTrips.has(trip.id) && (
+                        <div style={{ 
+                          color: '#007bff', 
+                          fontWeight: 'bold', 
+                          marginTop: '5px',
+                          fontSize: '0.9em'
+                        }}>
+                          🔄 Processing {trip.entry_count} entries with AI...
+                        </div>
+                      )}
                     </small>
                     <div style={{ marginTop: '10px' }}>
                       <button 
@@ -323,12 +352,23 @@ function AdminDashboard() {
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          regenerateBlog(trip.id);
+                          if (!regeneratingTrips.has(trip.id)) {
+                            regenerateBlog(trip.id);
+                          }
                         }}
-                        className="btn btn-secondary"
+                        disabled={regeneratingTrips.has(trip.id)}
+                        className={`btn btn-secondary ${regeneratingTrips.has(trip.id) ? 'btn-regenerating' : ''}`}
                         style={{ marginRight: '10px' }}
+                        title={regeneratingTrips.has(trip.id) ? 'Regeneration in progress...' : 'Click to regenerate blog content'}
                       >
-                        Regenerate Blog
+                        {regeneratingTrips.has(trip.id) ? (
+                          <>
+                            <span className="btn-spinner"></span>
+                            Regenerating...
+                          </>
+                        ) : (
+                          'Regenerate Blog'
+                        )}
                       </button>
                       <button 
                         onClick={(e) => {
