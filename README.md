@@ -84,7 +84,13 @@ See [Deployment Guide](doc/deployment.md) for production setup with nginx, SSL, 
 
 ## 🎯 Recent Updates
 
-### Interactive Location Selection (Latest!) 🗺️
+### Click-to-Jump Navigation & Location Mini-Maps (Latest!) 🗺️
+- **Interactive Map Popups**: Click on mini-images, text, or audio buttons in map markers to jump directly to that content in the blog
+- **Smart Date Filtering**: Automatically clears date filters when jumping to entries from different dates
+- **Location Mini-Maps**: Click 📍 icons next to timestamps to see exactly where entries were created
+- **Universal Navigation**: Works for all entry types (photos, text, audio) in both admin and public views
+
+### Interactive Location Selection 🗺️
 - **Manual Location Picker**: Choose exact locations using interactive maps
 - **GPS + Map Options**: Switch between automatic GPS and manual selection
 - **Precise Positioning**: Click or drag markers for perfect accuracy

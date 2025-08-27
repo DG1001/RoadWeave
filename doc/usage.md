@@ -191,6 +191,11 @@ RoadWeave works as a Progressive Web App (PWA):
 - Inline photos with contextual placement
 - Rich descriptions combining user comments and AI analysis
 - Professional travel blog writing style
+- **Location Mini-Maps**: Click 📍 icons next to timestamps to view entry locations:
+  - Shows exact coordinates where each entry was created
+  - Interactive read-only map with entry details
+  - Works for both photo captions and content piece timestamps
+  - Automatically appears only when location data exists
 
 **Interactive Map:**
 - Shows all entries with GPS coordinates
@@ -199,6 +204,11 @@ RoadWeave works as a Progressive Web App (PWA):
   - 🟢 Green: Photo entries  
   - 🔴 Red: Voice entries
 - Click markers for popup details
+- **Click-to-Jump Navigation**: Click content in map popups to jump directly to that entry in the blog:
+  - **Photos**: Click mini-images to jump to full photo in story
+  - **Text**: Click text snippets (with blue borders) to jump to content
+  - **Audio**: Click "🎵 Jump to story" buttons to navigate to audio entries
+- **Smart Navigation**: Automatically clears date filters when needed to show target content
 - Automatic map centering on first entry
 
 **Expandable Details:**
