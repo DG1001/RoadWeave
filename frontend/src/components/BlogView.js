@@ -6,6 +6,7 @@ import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import 'leaflet/dist/leaflet.css';
 import { getApiUrl, getAuthHeaders } from '../config/api';
+import CoordinateEditor from './CoordinateEditor';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -47,6 +48,7 @@ function BlogView() {
   const [error, setError] = useState('');
   const [mapCenter, setMapCenter] = useState([40.7128, -74.0060]); // Default to NYC
   const [showAllEntries, setShowAllEntries] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -292,6 +294,24 @@ function BlogView() {
     }
   };
 
+  const handleEditCoordinates = (entry) => {
+    setEditingEntry(entry);
+  };
+
+  const handleCoordinatesSaved = (updatedEntry) => {
+    // Update the entry in the entries array
+    setEntries(prevEntries => 
+      prevEntries.map(entry => 
+        entry.id === updatedEntry.id ? updatedEntry : entry
+      )
+    );
+
+    // Update map center if this entry now has coordinates
+    if (updatedEntry.latitude && updatedEntry.longitude) {
+      setMapCenter([updatedEntry.latitude, updatedEntry.longitude]);
+    }
+  };
+
   if (loading) {
     return (
       <div className="container">
@@ -445,11 +465,57 @@ function BlogView() {
                   <div className="entry-meta">
                     <strong>{entry.traveler_name}</strong> shared a {entry.content_type}
                     {' '}- {formatDate(entry.timestamp)}
-                    {entry.latitude && entry.longitude && (
-                      <span style={{ marginLeft: '10px', color: '#666' }}>
-                        📍 {entry.latitude.toFixed(4)}, {entry.longitude.toFixed(4)}
-                      </span>
-                    )}
+                    <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {entry.latitude && entry.longitude ? (
+                        <>
+                          <span style={{ color: '#666' }}>
+                            📍 {entry.latitude.toFixed(4)}, {entry.longitude.toFixed(4)}
+                          </span>
+                          <button
+                            onClick={() => handleEditCoordinates(entry)}
+                            style={{
+                              background: 'none',
+                              border: '1px solid #007bff',
+                              color: '#007bff',
+                              borderRadius: '3px',
+                              padding: '2px 6px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title="Edit coordinates"
+                          >
+                            ✏️ Edit
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ color: '#999', fontStyle: 'italic' }}>
+                            📍 No location data
+                          </span>
+                          <button
+                            onClick={() => handleEditCoordinates(entry)}
+                            style={{
+                              background: 'none',
+                              border: '1px solid #28a745',
+                              color: '#28a745',
+                              borderRadius: '3px',
+                              padding: '2px 6px',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title="Add coordinates"
+                          >
+                            📍 Add Location
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
                   
                   {entry.content_type === 'text' && (
@@ -528,6 +594,15 @@ function BlogView() {
             </div>
           </div>
         </div>
+
+        {/* Coordinate Editor Modal */}
+        {editingEntry && (
+          <CoordinateEditor
+            entry={editingEntry}
+            onClose={() => setEditingEntry(null)}
+            onSave={handleCoordinatesSaved}
+          />
+        )}
       </div>
     </div>
   );

@@ -827,6 +827,41 @@ def get_public_entries(token):
         'filename': entry.filename
     } for entry in entries])
 
+@app.route('/api/admin/entries/<int:entry_id>/coordinates', methods=['PUT'])
+@jwt_required()
+def update_entry_coordinates(entry_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    entry = Entry.query.get_or_404(entry_id)
+    data = request.get_json()
+    
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    
+    if latitude is not None and longitude is not None:
+        # Validate coordinate ranges
+        if not (-90 <= latitude <= 90):
+            return jsonify({'error': 'Latitude must be between -90 and 90'}), 400
+        if not (-180 <= longitude <= 180):
+            return jsonify({'error': 'Longitude must be between -180 and 180'}), 400
+        
+        entry.latitude = latitude
+        entry.longitude = longitude
+    else:
+        # Clear coordinates if null values are provided
+        entry.latitude = None
+        entry.longitude = None
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Coordinates updated successfully',
+        'id': entry.id,
+        'latitude': entry.latitude,
+        'longitude': entry.longitude
+    })
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
