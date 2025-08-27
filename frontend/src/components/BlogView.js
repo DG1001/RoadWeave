@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import { getApiUrl, getAuthHeaders } from '../config/api';
 import CoordinateEditor from './CoordinateEditor';
 import CalendarView from './CalendarView';
+import MiniMapModal from './MiniMapModal';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -55,6 +56,8 @@ function BlogView() {
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [contentPieces, setContentPieces] = useState([]);
   const [filteredContentPieces, setFilteredContentPieces] = useState([]);
+  const [miniMapEntry, setMiniMapEntry] = useState(null);
+  const [showMiniMap, setShowMiniMap] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -256,6 +259,29 @@ function BlogView() {
                     fontStyle: 'italic'
                   }}>
                     📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+                    {photoEntry.latitude && photoEntry.longitude && (
+                      <span 
+                        onClick={() => handleShowLocation(photoEntry)}
+                        style={{ 
+                          marginLeft: '8px',
+                          cursor: 'pointer',
+                          color: '#007bff',
+                          fontSize: '1.1em',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                          e.target.style.transform = 'scale(1.2)';
+                          e.target.style.filter = 'brightness(1.2)';
+                        }}
+                        onMouseOut={(e) => {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.filter = 'brightness(1)';
+                        }}
+                        title="Click to view location"
+                      >
+                        📍
+                      </span>
+                    )}
                     {photoEntry.content && photoEntry.content !== 'Photo upload' && (
                       <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
                         "{photoEntry.content}"
@@ -303,6 +329,11 @@ function BlogView() {
       const relatedEntry = entries.find(entry => relatedEntryIds.includes(entry.id));
       const travelerName = relatedEntry ? relatedEntry.traveler_name : 'Unknown';
       
+      // Find an entry with location data for this piece
+      const entryWithLocation = entries.find(entry => 
+        relatedEntryIds.includes(entry.id) && entry.latitude && entry.longitude
+      );
+      
       elements.push(
         <div id={`content-piece-${piece.id}`} key={`timestamp-${piece.id}`} style={{
           textAlign: 'right',
@@ -314,6 +345,29 @@ function BlogView() {
           scrollMarginTop: '20px'
         }}>
           👤 {travelerName} • 🕒 {formatDate(piece.timestamp)}
+          {entryWithLocation && (
+            <span 
+              onClick={() => handleShowLocation(entryWithLocation)}
+              style={{ 
+                marginLeft: '8px',
+                cursor: 'pointer',
+                color: '#007bff',
+                fontSize: '1.1em',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => {
+                e.target.style.transform = 'scale(1.2)';
+                e.target.style.filter = 'brightness(1.2)';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.transform = 'scale(1)';
+                e.target.style.filter = 'brightness(1)';
+              }}
+              title="Click to view location"
+            >
+              📍
+            </span>
+          )}
         </div>
       );
 
@@ -415,6 +469,29 @@ function BlogView() {
                   fontStyle: 'italic'
                 }}>
                   📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+                  {photoEntry.latitude && photoEntry.longitude && (
+                    <span 
+                      onClick={() => handleShowLocation(photoEntry)}
+                      style={{ 
+                        marginLeft: '8px',
+                        cursor: 'pointer',
+                        color: '#007bff',
+                        fontSize: '1.1em',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.transform = 'scale(1.2)';
+                        e.target.style.filter = 'brightness(1.2)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.transform = 'scale(1)';
+                        e.target.style.filter = 'brightness(1)';
+                      }}
+                      title="Click to view location"
+                    >
+                      📍
+                    </span>
+                  )}
                   {photoEntry.content && photoEntry.content !== 'Photo upload' && (
                     <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
                       "{photoEntry.content}"
@@ -489,6 +566,29 @@ function BlogView() {
               fontStyle: 'italic'
             }}>
               📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
+              {photoEntry.latitude && photoEntry.longitude && (
+                <span 
+                  onClick={() => handleShowLocation(photoEntry)}
+                  style={{ 
+                    marginLeft: '8px',
+                    cursor: 'pointer',
+                    color: '#007bff',
+                    fontSize: '1.1em',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.transform = 'scale(1.2)';
+                    e.target.style.filter = 'brightness(1.2)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.transform = 'scale(1)';
+                    e.target.style.filter = 'brightness(1)';
+                  }}
+                  title="Click to view location"
+                >
+                  📍
+                </span>
+              )}
               {photoEntry.content && photoEntry.content !== 'Photo upload' && (
                 <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
                   "{photoEntry.content}"
@@ -580,6 +680,18 @@ function BlogView() {
 
   const scrollToPhotoInBlog = (entryId) => {
     scrollToEntry(entryId, 'photo');
+  };
+
+  const handleShowLocation = (entry) => {
+    if (entry && entry.latitude && entry.longitude) {
+      setMiniMapEntry(entry);
+      setShowMiniMap(true);
+    }
+  };
+
+  const handleCloseMiniMap = () => {
+    setShowMiniMap(false);
+    setMiniMapEntry(null);
   };
 
   const handleEditCoordinates = (entry) => {
@@ -1064,6 +1176,13 @@ function BlogView() {
             onSave={handleCoordinatesSaved}
           />
         )}
+        
+        {/* Mini Map Modal */}
+        <MiniMapModal
+          entry={miniMapEntry}
+          isVisible={showMiniMap}
+          onClose={handleCloseMiniMap}
+        />
       </div>
     </div>
   );
