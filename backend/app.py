@@ -493,7 +493,6 @@ def create_content_piece(trip, new_entry):
         IMPORTANT: Write your response in {language_name} language.
         
         New entry details:
-        - Entry ID: {new_entry.id}
         - Type: {new_entry.content_type}
         - Content: {content_description}
         - Traveler: {new_entry.traveler.name}
