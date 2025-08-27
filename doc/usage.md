@@ -56,6 +56,28 @@ Complete guide for admins and travelers using RoadWeave.
 - **All Entries**: Expand to see chronological list of submissions
 - **Traveler Management**: Copy and reshare links as needed
 
+### 6. Coordinate Editing (Admin)
+
+Admins can edit entry coordinates for better accuracy:
+
+1. **View Blog**: Click "View Blog" to access admin blog view
+2. **Locate Entry**: Find entry with incorrect coordinates in the entries list
+3. **Edit Coordinates**: Click the "✏️ Edit" button next to coordinates
+4. **Interactive Map**: Mini map opens showing current location
+5. **Adjust Location**: 
+   - Click anywhere on map to set new coordinates
+   - Drag the red marker for precise positioning
+   - Use manual coordinate input if needed
+6. **Save Changes**: Click "Save Coordinates" to update
+7. **Verify**: Coordinates update in entries list and main map
+
+**Calendar View:**
+- Calendar shows days with entries (📝 text, 📷 photo, 🎵 audio counts)
+- Click any day to filter entries for that specific date
+- Navigate months with arrow buttons
+- "Today" button returns to current month
+- Week starts on Monday for better European compatibility
+
 ## Traveler Workflow
 
 ### 1. Access Traveler Link
@@ -88,7 +110,10 @@ Complete guide for admins and travelers using RoadWeave.
    - Where it was taken
    - How you're feeling
    - Context or story behind the image
-4. Click "Share Entry"
+4. **Location**: Uses current device GPS or manual map selection
+5. Click "Share Entry"
+
+*Note: Photo GPS extraction has been removed. All entries now use device location or manual selection for consistent, reliable positioning.*
 
 **🎤 Voice Entry:**
 1. Select "Voice" option
@@ -118,12 +143,36 @@ Complete guide for admins and travelers using RoadWeave.
 - Describe surroundings and atmosphere
 - Voice messages are transcribed and integrated into the blog
 
-### 4. Location Information
+### 4. Location Selection
 
+RoadWeave offers two ways to set location for your entries:
+
+#### Automatic GPS (Default)
 - **GPS Capture**: Automatic when permission granted
 - **Location Status**: Green checkmark indicates successful capture
 - **Retry**: Click "Try Again" if location fails
-- **Offline**: Entries work without location but won't appear on map
+- **Accuracy**: Uses device's current location
+
+#### Manual Location Picker (New!)
+1. Click "🗺️ Pick from Map" button in location section
+2. Interactive map opens with your current position (if available)
+3. **Click anywhere** on the map to select that location
+4. **Drag the green marker** to fine-tune position
+5. View exact coordinates at bottom of map
+6. Click "Use This Location" to confirm
+7. Click "Cancel" to return to GPS mode
+
+**Use Cases for Manual Location:**
+- GPS is inaccurate or unavailable
+- Want to mark a specific landmark or attraction
+- Posting about a location you visited earlier
+- More precise location control needed
+- Indoor locations where GPS doesn't work well
+
+**Location Display:**
+- **Current GPS**: Shows "📱 Use Current GPS" with current coordinates
+- **Manual Selection**: Shows "🗺️ Pick from Map" with selected coordinates
+- Easy switching between modes at any time
 
 ### 5. Offline Usage
 

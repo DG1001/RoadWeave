@@ -48,9 +48,7 @@ function MapClickHandler({ onLocationChange }) {
 
   // Fix map size when component mounts (needed for modals)
   useEffect(() => {
-    console.log('MapClickHandler mounted, map:', map);
     const timer = setTimeout(() => {
-      console.log('Invalidating map size');
       map.invalidateSize();
     }, 100);
     return () => clearTimeout(timer);
@@ -110,8 +108,6 @@ function LocationPicker({
   };
 
   if (!isVisible) return null;
-  
-  console.log('LocationPicker rendering with location:', selectedLocation);
 
   return (
     <div style={{

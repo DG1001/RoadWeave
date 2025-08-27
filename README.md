@@ -11,9 +11,11 @@
 - **🤖 AI-Powered Blogging**: Google Gemini automatically generates travel narratives
 - **📸 Smart Photo Analysis**: AI analyzes photos for rich descriptions
 - **🎤 Voice-to-Text**: Audio messages transcribed and integrated into blogs
+- **🗺️ Interactive Location Picker**: Choose exact locations via interactive maps
+- **📅 Calendar View**: Navigate blog entries by date with visual calendar
+- **📍 Coordinate Editing**: Admin tools for precise location management
 - **🌍 Multi-language Support**: Blog generation in 19 languages
 - **📱 PWA Experience**: Works offline, installable on mobile devices
-- **🗺️ Interactive Maps**: Leaflet.js maps with entry locations
 - **🔒 Secure Access**: Token-based traveler access, admin dashboard
 
 ## 🚀 Quick Start
@@ -82,13 +84,29 @@ See [Deployment Guide](doc/deployment.md) for production setup with nginx, SSL, 
 
 ## 🎯 Recent Updates
 
-### Audio Transcription (New!) 🎤
-- Voice messages are now transcribed to text using AI
+### Interactive Location Selection (Latest!) 🗺️
+- **Manual Location Picker**: Choose exact locations using interactive maps
+- **GPS + Map Options**: Switch between automatic GPS and manual selection
+- **Precise Positioning**: Click or drag markers for perfect accuracy
+- **Admin Coordinate Editing**: Fix incorrect coordinates with visual map tools
+
+### Calendar Navigation & Content Splitting 📅
+- **Visual Calendar**: Navigate blog entries by date with entry count badges
+- **Content Pieces**: Blog entries split into individual timestamped pieces
+- **Date Filtering**: Click calendar days to filter entries
+- **Clean Timestamps**: Professional timestamp metadata with traveler names
+
+### Location System Improvements 📍
+- **Removed EXIF GPS**: No more unreliable photo GPS extraction
+- **Consistent Location Source**: All entries use device GPS or manual selection
+- **Better Accuracy**: More reliable and user-controlled positioning
+
+### Audio Transcription 🎤
+- Voice messages are transcribed to text using AI
 - Transcriptions are intelligently integrated into blog content
 - Configure with `ENABLE_AUDIO_TRANSCRIPTION=true`
 
 ### Enhanced Security 🔒
-- Fixed blog access security vulnerability
 - Admin-only routes properly protected
 - Public blogs only accessible via tokens
 
