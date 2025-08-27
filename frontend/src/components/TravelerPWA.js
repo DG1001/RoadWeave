@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl } from '../config/api';
+import LocationPicker from './LocationPicker';
 
 function TravelerPWA() {
   const { token } = useParams();
@@ -21,6 +22,9 @@ function TravelerPWA() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
+  const [locationSource, setLocationSource] = useState('current'); // 'current' or 'manual'
+  const [manualLocation, setManualLocation] = useState(null);
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
   
   const mediaRecorder = useRef(null);
   const audioChunks = useRef([]);
@@ -230,33 +234,44 @@ function TravelerPWA() {
     setError('');
     setSuccess('');
 
-    // Get current location for this entry
-    let entryLocation = location;
-    if (navigator.geolocation) {
-      setUpdatingLocation(true);
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(
-            resolve,
-            reject,
-            {
-              enableHighAccuracy: true,
-              timeout: 5000,
-              maximumAge: 60000 // Accept location up to 1 minute old
-            }
-          );
-        });
-        entryLocation = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        // Update state for next time
-        setLocation(entryLocation);
-      } catch (error) {
-        console.warn('Could not get current location, using last known location:', error);
-        // Continue with existing location or no location
-      } finally {
-        setUpdatingLocation(false);
+    // Get location for this entry
+    let entryLocation = null;
+    
+    if (locationSource === 'manual' && manualLocation) {
+      // Use manually selected location
+      entryLocation = {
+        latitude: manualLocation.lat,
+        longitude: manualLocation.lng
+      };
+    } else {
+      // Get current location
+      entryLocation = location;
+      if (navigator.geolocation) {
+        setUpdatingLocation(true);
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              resolve,
+              reject,
+              {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 60000 // Accept location up to 1 minute old
+              }
+            );
+          });
+          entryLocation = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          // Update state for next time
+          setLocation(entryLocation);
+        } catch (error) {
+          console.warn('Could not get current location, using last known location:', error);
+          // Continue with existing location or no location
+        } finally {
+          setUpdatingLocation(false);
+        }
       }
     }
 
@@ -294,6 +309,8 @@ function TravelerPWA() {
       setTextContent('');
       setSelectedFile(null);
       setAudioBlob(null);
+      setLocationSource('current');
+      setManualLocation(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -655,6 +672,95 @@ function TravelerPWA() {
               </div>
             )}
 
+            {/* Location Selection */}
+            <div className="form-group" style={{ marginTop: '20px' }}>
+              <label>Location for this entry:</label>
+              <div style={{ marginTop: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setLocationSource('current')}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      backgroundColor: locationSource === 'current' ? '#007bff' : '#f8f9fa',
+                      color: locationSource === 'current' ? 'white' : '#666',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    📱 Use Current GPS
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowLocationPicker(true)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 12px',
+                      backgroundColor: locationSource === 'manual' ? '#007bff' : '#f8f9fa',
+                      color: locationSource === 'manual' ? 'white' : '#666',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    🗺️ Pick from Map
+                  </button>
+                </div>
+                
+                {locationSource === 'current' && (
+                  <div style={{ 
+                    backgroundColor: '#f8f9fa', 
+                    padding: '8px 12px', 
+                    borderRadius: '4px',
+                    fontSize: '0.9em',
+                    border: '1px solid #dee2e6'
+                  }}>
+                    <div style={{ color: '#6c757d' }}>
+                      📍 Will use current device location
+                      {location && (
+                        <div style={{ marginTop: '4px', fontSize: '0.8em' }}>
+                          Current: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
+                {locationSource === 'manual' && manualLocation && (
+                  <div style={{ 
+                    backgroundColor: '#e3f2fd', 
+                    padding: '8px 12px', 
+                    borderRadius: '4px',
+                    fontSize: '0.9em',
+                    border: '1px solid #bbdefb'
+                  }}>
+                    <div style={{ color: '#1976d2', marginBottom: '4px' }}>
+                      📍 Selected location: {manualLocation.lat.toFixed(4)}, {manualLocation.lng.toFixed(4)}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationPicker(true)}
+                      style={{
+                        fontSize: '0.8em',
+                        padding: '2px 6px',
+                        backgroundColor: '#1976d2',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '3px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Change Location
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <button 
               type="submit" 
               className="btn" 
@@ -679,6 +785,18 @@ function TravelerPWA() {
           </ul>
         </div>
       </div>
+      
+      {/* Location Picker Modal */}
+      <LocationPicker
+        isVisible={showLocationPicker}
+        initialLocation={manualLocation || (location ? { lat: location.latitude, lng: location.longitude } : { lat: 51.505, lng: -0.09 })}
+        onLocationSelect={(selectedLocation) => {
+          setManualLocation(selectedLocation);
+          setLocationSource('manual');
+          setShowLocationPicker(false);
+        }}
+        onCancel={() => setShowLocationPicker(false)}
+      />
     </div>
   );
 }
