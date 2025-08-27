@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
@@ -40,6 +40,29 @@ const createIcon = (type) => {
     iconAnchor: [12, 12]
   });
 };
+
+// Component to auto-fit map bounds when markers change
+function MapBoundsFitter({ entries }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (entries.length === 0) return;
+
+    if (entries.length === 1) {
+      // Single marker: center and zoom to reasonable level
+      const entry = entries[0];
+      map.setView([entry.latitude, entry.longitude], 15);
+    } else {
+      // Multiple markers: fit bounds with padding
+      const bounds = L.latLngBounds(
+        entries.map(entry => [entry.latitude, entry.longitude])
+      );
+      map.fitBounds(bounds, { padding: [20, 20] });
+    }
+  }, [map, entries]);
+
+  return null;
+}
 
 function BlogView() {
   const { tripId } = useParams();
@@ -811,6 +834,7 @@ function BlogView() {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
+                <MapBoundsFitter entries={entriesWithLocation} />
                 {entriesWithLocation.map((entry) => (
                   <Marker
                     key={entry.id}
