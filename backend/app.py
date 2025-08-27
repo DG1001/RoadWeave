@@ -136,6 +136,7 @@ class Entry(db.Model):
     longitude = db.Column(db.Float)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     filename = db.Column(db.String(255))  # For uploaded files
+    disabled = db.Column(db.Boolean, default=False, nullable=False)  # Whether entry is disabled from AI processing
 
 class TripContent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -734,7 +735,8 @@ def get_entries(trip_id):
         'longitude': entry.longitude,
         'timestamp': timestamp_to_iso(entry.timestamp),
         'traveler_name': entry.traveler.name,
-        'filename': entry.filename
+        'filename': entry.filename,
+        'disabled': entry.disabled
     } for entry in entries])
 
 @app.route('/api/admin/trips/<int:trip_id>/regenerate-blog', methods=['POST'])
@@ -744,7 +746,11 @@ def regenerate_blog(trip_id):
         return jsonify({'error': 'Admin access required'}), 403
     
     trip = Trip.query.get_or_404(trip_id)
-    entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.asc()).all()
+    all_entries = Entry.query.filter_by(trip_id=trip_id).order_by(Entry.timestamp.asc()).all()
+    
+    # Filter out disabled entries
+    enabled_entries = [entry for entry in all_entries if not entry.disabled]
+    disabled_count = len(all_entries) - len(enabled_entries)
     
     # Clear existing content pieces
     TripContent.query.filter_by(trip_id=trip_id).delete()
@@ -752,9 +758,9 @@ def regenerate_blog(trip_id):
     # Reset blog content (keep for backwards compatibility during transition)
     trip.blog_content = f"# {trip.name}\n\n{trip.description}\n"
     
-    # Process each entry to create new content pieces
+    # Process each enabled entry to create new content pieces
     created_count = 0
-    for entry in entries:
+    for entry in enabled_entries:
         try:
             create_content_piece(trip, entry)
             created_count += 1
@@ -762,9 +768,13 @@ def regenerate_blog(trip_id):
             print(f"Content piece creation failed for entry {entry.id}: {e}")
     
     db.session.commit()
-    return jsonify({
-        'message': f'Blog regenerated successfully. Created {created_count} content pieces from {len(entries)} entries.'
-    })
+    
+    # Build informative response message
+    message = f'Blog regenerated successfully. Created {created_count} content pieces from {len(enabled_entries)} enabled entries.'
+    if disabled_count > 0:
+        message += f' Skipped {disabled_count} disabled entries.'
+    
+    return jsonify({'message': message})
 
 @app.route('/api/admin/trips/<int:trip_id>/migrate-content', methods=['POST'])
 @jwt_required()
@@ -1072,6 +1082,24 @@ def update_entry_coordinates(entry_id):
         'longitude': entry.longitude
     })
 
+@app.route('/api/admin/entries/<int:entry_id>/toggle-disabled', methods=['PUT'])
+@jwt_required()
+def toggle_entry_disabled(entry_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    entry = Entry.query.get_or_404(entry_id)
+    
+    # Toggle the disabled state
+    entry.disabled = not entry.disabled
+    db.session.commit()
+    
+    return jsonify({
+        'message': f'Entry {"disabled" if entry.disabled else "enabled"} successfully',
+        'id': entry.id,
+        'disabled': entry.disabled
+    })
+
 @app.route('/api/trips/<int:trip_id>/content', methods=['GET'])
 @jwt_required()
 def get_trip_content(trip_id):
@@ -1264,6 +1292,12 @@ def migrate_database():
                 migrations_needed.append('ALTER TABLE trip ADD COLUMN public_enabled BOOLEAN DEFAULT 0')
             if 'public_token' not in trip_columns:
                 migrations_needed.append('ALTER TABLE trip ADD COLUMN public_token VARCHAR(100)')
+        
+        # Check if entry table needs disabled column
+        if 'entry' in existing_tables:
+            entry_columns = [col['name'] for col in inspector.get_columns('entry')]
+            if 'disabled' not in entry_columns:
+                migrations_needed.append('ALTER TABLE entry ADD COLUMN disabled BOOLEAN DEFAULT 0 NOT NULL')
         
         # Check if trip_content table exists, create if not
         if 'trip_content' not in existing_tables:

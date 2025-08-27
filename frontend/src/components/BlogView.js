@@ -553,6 +553,30 @@ function BlogView() {
     }
   };
 
+  const toggleEntryDisabled = async (entryId) => {
+    try {
+      const response = await axios.put(getApiUrl(`/api/admin/entries/${entryId}/toggle-disabled`), {}, {
+        headers: getAuthHeaders()
+      });
+      
+      // Update the entry in the entries array
+      setEntries(prevEntries => 
+        prevEntries.map(entry => 
+          entry.id === entryId ? { ...entry, disabled: response.data.disabled } : entry
+        )
+      );
+      
+      // Show brief feedback
+      const message = response.data.message;
+      // You could add a toast notification here if desired
+      console.log(message);
+      
+    } catch (err) {
+      console.error('Failed to toggle entry disabled state:', err);
+      // You could add error handling/notification here
+    }
+  };
+
   if (loading) {
     return (
       <div className="container">
@@ -803,15 +827,45 @@ function BlogView() {
                           </button>
                         </>
                       )}
+                      <button
+                        onClick={() => toggleEntryDisabled(entry.id)}
+                        style={{
+                          background: 'none',
+                          border: `1px solid ${entry.disabled ? '#28a745' : '#dc3545'}`,
+                          color: entry.disabled ? '#28a745' : '#dc3545',
+                          borderRadius: '3px',
+                          padding: '2px 6px',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '3px'
+                        }}
+                        title={entry.disabled ? 'Enable entry for AI processing' : 'Disable entry from AI processing'}
+                      >
+                        {entry.disabled ? '✅ Enable' : '❌ Disable'}
+                      </button>
                     </div>
                   </div>
                   
                   {entry.content_type === 'text' && (
-                    <p>{entry.content}</p>
+                    <div style={{ opacity: entry.disabled ? 0.5 : 1 }}>
+                      <p>{entry.content}</p>
+                      {entry.disabled && (
+                        <div style={{ 
+                          color: '#dc3545', 
+                          fontSize: '12px', 
+                          fontWeight: 'bold',
+                          marginTop: '5px'
+                        }}>
+                          ⚠️ This entry is disabled and will be skipped during AI regeneration
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   {entry.content_type === 'photo' && entry.filename && (
-                    <div>
+                    <div style={{ opacity: entry.disabled ? 0.5 : 1 }}>
                       <img
                         src={getFileUrl(entry.filename)}
                         alt="Travel moment"
@@ -826,22 +880,27 @@ function BlogView() {
                             💬 "{entry.content}"
                           </p>
                         )}
-                        <p style={{ margin: '2px 0', fontSize: '0.8em', color: '#4CAF50' }}>
-                          🤖 AI-enhanced description in blog
+                        <p style={{ margin: '2px 0', fontSize: '0.8em', color: entry.disabled ? '#999' : '#4CAF50' }}>
+                          {entry.disabled ? '⚠️ Disabled - will not be processed by AI' : '🤖 AI-enhanced description in blog'}
                         </p>
                       </div>
                     </div>
                   )}
                   
                   {entry.content_type === 'audio' && entry.filename && (
-                    <div>
+                    <div style={{ opacity: entry.disabled ? 0.5 : 1 }}>
                       <audio controls style={{ width: '100%', maxWidth: '400px' }}>
                         <source src={getFileUrl(entry.filename)} />
                         Your browser does not support the audio element.
                       </audio>
-                      <p style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
-                        🎤 Voice recording
-                      </p>
+                      <div style={{ fontSize: '0.9em', color: '#666', marginTop: '5px' }}>
+                        <p style={{ margin: '2px 0' }}>
+                          🎤 Voice recording
+                        </p>
+                        <p style={{ margin: '2px 0', fontSize: '0.8em', color: entry.disabled ? '#999' : '#4CAF50' }}>
+                          {entry.disabled ? '⚠️ Disabled - will not be processed by AI' : '🤖 Transcribed and integrated into blog'}
+                        </p>
+                      </div>
                     </div>
                   )}
                 </div>
