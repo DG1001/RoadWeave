@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl } from '../config/api';
-import EXIF from 'exif-js';
 
 function TravelerPWA() {
   const { token } = useParams();
@@ -22,8 +21,6 @@ function TravelerPWA() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [photoLocation, setPhotoLocation] = useState(null);
-  const [locationSource, setLocationSource] = useState('current');
   
   const mediaRecorder = useRef(null);
   const audioChunks = useRef([]);
@@ -114,43 +111,6 @@ function TravelerPWA() {
     }
   };
 
-  const extractGPSFromEXIF = (file) => {
-    return new Promise((resolve) => {
-      // Try to extract GPS coordinates from EXIF data
-      EXIF.getData(file, function() {
-        const lat = EXIF.getTag(this, "GPSLatitude");
-        const latRef = EXIF.getTag(this, "GPSLatitudeRef");
-        const lon = EXIF.getTag(this, "GPSLongitude");
-        const lonRef = EXIF.getTag(this, "GPSLongitudeRef");
-        
-        if (lat && lon && latRef && lonRef && lat[0] && lon[0] && !isNaN(lat[0])) {
-          try {
-            // Convert DMS to decimal degrees
-            const latDecimal = parseFloat(lat[0]) + parseFloat(lat[1] || 0)/60 + parseFloat(lat[2] || 0)/3600;
-            const lonDecimal = parseFloat(lon[0]) + parseFloat(lon[1] || 0)/60 + parseFloat(lon[2] || 0)/3600;
-            
-            // Apply direction
-            const finalLat = latRef === "S" ? -Math.abs(latDecimal) : Math.abs(latDecimal);
-            const finalLon = lonRef === "W" ? -Math.abs(lonDecimal) : Math.abs(lonDecimal);
-            
-            if (!isNaN(finalLat) && !isNaN(finalLon) && 
-                Math.abs(finalLat) <= 90 && Math.abs(finalLon) <= 180) {
-              resolve({
-                latitude: finalLat,
-                longitude: finalLon
-              });
-              return;
-            }
-          } catch (error) {
-            // GPS parsing failed, fall back to current location
-          }
-        }
-        
-        // No valid GPS data found, will use current location
-        resolve(null);
-      });
-    });
-  };
 
   const compressImage = (file, quality = 0.9, maxWidth = 2560, maxHeight = 1440) => {
     return new Promise((resolve) => {
@@ -200,20 +160,6 @@ function TravelerPWA() {
       const maxSizeBytes = 32 * 1024 * 1024; // 32MB
       const originalSizeMB = (file.size / (1024 * 1024)).toFixed(1);
       
-      // For ALL images: Extract GPS FIRST (before compression destroys EXIF)
-      let gpsData = null;
-      if (file.type.startsWith('image/')) {
-        setError(`Reading GPS data from image...`);
-        gpsData = await extractGPSFromEXIF(file);
-        
-        if (gpsData) {
-          setPhotoLocation(gpsData);
-          setLocationSource('photo');
-        } else {
-          setPhotoLocation(null);
-          setLocationSource('current');
-        }
-      }
       
       // Now compress the image if needed
       if (file.type.startsWith('image/')) {
@@ -250,21 +196,12 @@ function TravelerPWA() {
           setSelectedFile(compressedFile);
           
           // Show final status message
-          if (gpsData) {
-            if (originalSizeMB !== compressedSizeMB) {
-              setError(`✓ Image optimized from ${originalSizeMB}MB to ${compressedSizeMB}MB. Location from photo: ${gpsData.latitude.toFixed(4)}, ${gpsData.longitude.toFixed(4)}`);
-            } else {
-              setError(`✓ Location from photo: ${gpsData.latitude.toFixed(4)}, ${gpsData.longitude.toFixed(4)}`);
-            }
-            setTimeout(() => setError(''), 4000);
+          if (originalSizeMB !== compressedSizeMB) {
+            setError(`✓ Image optimized from ${originalSizeMB}MB to ${compressedSizeMB}MB. Using current location.`);
+            setTimeout(() => setError(''), 3000);
           } else {
-            if (originalSizeMB !== compressedSizeMB) {
-              setError(`✓ Image optimized from ${originalSizeMB}MB to ${compressedSizeMB}MB. Using current location.`);
-              setTimeout(() => setError(''), 3000);
-            } else {
-              setError(`✓ Image ready. Using current location.`);
-              setTimeout(() => setError(''), 2000);
-            }
+            setError(`✓ Image ready. Using current location.`);
+            setTimeout(() => setError(''), 2000);
           }
           
         } catch (error) {
@@ -293,43 +230,34 @@ function TravelerPWA() {
     setError('');
     setSuccess('');
 
-    // Get location for this entry (photo GPS or current location)
-    let entryLocation = null;
-    
-    if (entryType === 'photo' && photoLocation && locationSource === 'photo') {
-      // Use GPS coordinates from photo
-      entryLocation = photoLocation;
-    } else {
-      // Get current location for this entry
-      let currentLocation = location;
-      if (navigator.geolocation) {
-        setUpdatingLocation(true);
-        try {
-          const position = await new Promise((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-              resolve,
-              reject,
-              {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 60000 // Accept location up to 1 minute old
-              }
-            );
-          });
-          currentLocation = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          };
-          // Update state for next time
-          setLocation(currentLocation);
-        } catch (error) {
-          console.warn('Could not get current location, using last known location:', error);
-          // Continue with existing location or no location
-        } finally {
-          setUpdatingLocation(false);
-        }
+    // Get current location for this entry
+    let entryLocation = location;
+    if (navigator.geolocation) {
+      setUpdatingLocation(true);
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 60000 // Accept location up to 1 minute old
+            }
+          );
+        });
+        entryLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        };
+        // Update state for next time
+        setLocation(entryLocation);
+      } catch (error) {
+        console.warn('Could not get current location, using last known location:', error);
+        // Continue with existing location or no location
+      } finally {
+        setUpdatingLocation(false);
       }
-      entryLocation = currentLocation;
     }
 
     const formData = new FormData();
@@ -366,8 +294,6 @@ function TravelerPWA() {
       setTextContent('');
       setSelectedFile(null);
       setAudioBlob(null);
-      setPhotoLocation(null);
-      setLocationSource('current');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -649,74 +575,17 @@ function TravelerPWA() {
                         ✓ Selected: {selectedFile.name}
                       </p>
                       
-                      {/* GPS Source Information */}
-                      {photoLocation && locationSource === 'photo' ? (
-                        <div style={{ 
-                          backgroundColor: '#e8f5e8', 
-                          padding: '8px 12px', 
-                          borderRadius: '4px',
-                          fontSize: '0.9em',
-                          border: '1px solid #d4edda'
-                        }}>
-                          <div style={{ color: '#155724', marginBottom: '4px' }}>
-                            📍 Location from photo: {photoLocation.latitude.toFixed(4)}, {photoLocation.longitude.toFixed(4)}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setLocationSource('current');
-                              setError('Switched to current location');
-                              setTimeout(() => setError(''), 2000);
-                            }}
-                            style={{
-                              fontSize: '0.8em',
-                              padding: '2px 6px',
-                              backgroundColor: '#155724',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '3px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Use current location instead
-                          </button>
+                      <div style={{ 
+                        backgroundColor: '#f8f9fa', 
+                        padding: '8px 12px', 
+                        borderRadius: '4px',
+                        fontSize: '0.9em',
+                        border: '1px solid #dee2e6'
+                      }}>
+                        <div style={{ color: '#6c757d' }}>
+                          📍 Will use current location
                         </div>
-                      ) : (
-                        <div style={{ 
-                          backgroundColor: '#f8f9fa', 
-                          padding: '8px 12px', 
-                          borderRadius: '4px',
-                          fontSize: '0.9em',
-                          border: '1px solid #dee2e6'
-                        }}>
-                          <div style={{ color: '#6c757d' }}>
-                            📍 Will use current location
-                            {photoLocation && (
-                              <div style={{ marginTop: '4px' }}>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setLocationSource('photo');
-                                    setError('Switched to photo location');
-                                    setTimeout(() => setError(''), 2000);
-                                  }}
-                                  style={{
-                                    fontSize: '0.8em',
-                                    padding: '2px 6px',
-                                    backgroundColor: '#6c757d',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '3px',
-                                    cursor: 'pointer'
-                                  }}
-                                >
-                                  Use photo location ({photoLocation.latitude.toFixed(4)}, {photoLocation.longitude.toFixed(4)})
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   )}
                 </div>
