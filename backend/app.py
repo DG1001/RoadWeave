@@ -297,7 +297,7 @@ def analyze_image_with_ai(image_path, user_comment=""):
             print(f"   Estimated input cost: ${estimated_input_cost:.6f}")
         
         # Use Gemini vision model (stable version)
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
         
         # Prepare the image for Gemini
         image_part = {
@@ -366,7 +366,7 @@ def transcribe_audio_with_ai(audio_path):
             print(f"   Estimated cost: ${estimated_cost:.6f}")
         
         # Use Gemini model for transcription
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
         
         # Prepare the audio for Gemini
         audio_part = {
@@ -434,7 +434,7 @@ LANGUAGE_NAMES = {
 def create_content_piece(trip, new_entry):
     """Create a new TripContent record for the given entry"""
     try:
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
         
         # Get language name for the prompt
         language_name = LANGUAGE_NAMES.get(trip.blog_language, 'English')
