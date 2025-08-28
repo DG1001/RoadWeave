@@ -80,6 +80,8 @@ function PublicBlogView() {
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [miniMapEntry, setMiniMapEntry] = useState(null);
   const [showMiniMap, setShowMiniMap] = useState(false);
+  const [isMapCollapsed, setIsMapCollapsed] = useState(true);
+  const [isCalendarCollapsed, setIsCalendarCollapsed] = useState(true);
 
   useEffect(() => {
     loadBlogData();
@@ -845,9 +847,26 @@ function PublicBlogView() {
       <div className="container">
         {/* Interactive Map */}
         {entriesWithLocation.length > 0 && (
-          <div className="card">
-            <h2>Journey Map</h2>
-            <div className="map-container">
+          <div className="card" style={isMapCollapsed ? { padding: '10px 20px' } : {}}>
+            <h2 
+              onClick={() => setIsMapCollapsed(!isMapCollapsed)}
+              style={{ 
+                cursor: 'pointer', 
+                userSelect: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                margin: isMapCollapsed ? '5px 0' : undefined
+              }}
+            >
+              <span style={{ fontSize: '0.8em' }}>
+                {isMapCollapsed ? '▶' : '▼'}
+              </span>
+              Journey Map
+            </h2>
+            {!isMapCollapsed && (
+              <>
+                <div className="map-container">
               <MapContainer
                 center={mapCenter}
                 zoom={10}
@@ -974,13 +993,32 @@ function PublicBlogView() {
               <span style={{ color: '#28a745' }}>● Photo</span>{' '}
               <span style={{ color: '#dc3545' }}>● Audio</span>
             </div>
+              </>
+            )}
           </div>
         )}
 
         {/* Calendar View */}
-        <div className="card">
-          <h2>Calendar View</h2>
-          <p style={{ color: '#666', fontSize: '14px', marginBottom: '15px' }}>
+        <div className="card" style={isCalendarCollapsed ? { padding: '10px 20px' } : {}}>
+          <h2 
+            onClick={() => setIsCalendarCollapsed(!isCalendarCollapsed)}
+            style={{ 
+              cursor: 'pointer', 
+              userSelect: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              margin: isCalendarCollapsed ? '5px 0' : undefined
+            }}
+          >
+            <span style={{ fontSize: '0.8em' }}>
+              {isCalendarCollapsed ? '▶' : '▼'}
+            </span>
+            Calendar View
+          </h2>
+          {!isCalendarCollapsed && (
+            <>
+              <p style={{ color: '#666', fontSize: '14px', marginBottom: '15px' }}>
             Click on any day to filter entries by date. 
             {selectedDate && (
               <>
@@ -1010,6 +1048,8 @@ function PublicBlogView() {
             <div style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
               Loading calendar...
             </div>
+          )}
+            </>
           )}
         </div>
 
