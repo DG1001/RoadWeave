@@ -257,42 +257,6 @@ function PublicBlogView() {
                       boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                     }}
                   />
-                  <div style={{ 
-                    marginTop: '8px', 
-                    fontSize: '0.9em', 
-                    color: '#666',
-                    fontStyle: 'italic'
-                  }}>
-                    📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
-                    {photoEntry.latitude && photoEntry.longitude && (
-                      <span 
-                        onClick={() => handleShowLocation(photoEntry)}
-                        style={{ 
-                          marginLeft: '8px',
-                          cursor: 'pointer',
-                          color: '#007bff',
-                          fontSize: '1.1em',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseOver={(e) => {
-                          e.target.style.transform = 'scale(1.2)';
-                          e.target.style.filter = 'brightness(1.2)';
-                        }}
-                        onMouseOut={(e) => {
-                          e.target.style.transform = 'scale(1)';
-                          e.target.style.filter = 'brightness(1)';
-                        }}
-                        title="Click to view location"
-                      >
-                        📍
-                      </span>
-                    )}
-                    {photoEntry.content && photoEntry.content !== 'Photo upload' && (
-                      <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
-                        "{photoEntry.content}"
-                      </div>
-                    )}
-                  </div>
                 </div>
               );
             }
@@ -467,42 +431,6 @@ function PublicBlogView() {
                     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}
                 />
-                <div style={{ 
-                  marginTop: '8px', 
-                  fontSize: '0.9em', 
-                  color: '#666',
-                  fontStyle: 'italic'
-                }}>
-                  📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
-                  {photoEntry.latitude && photoEntry.longitude && (
-                    <span 
-                      onClick={() => handleShowLocation(photoEntry)}
-                      style={{ 
-                        marginLeft: '8px',
-                        cursor: 'pointer',
-                        color: '#007bff',
-                        fontSize: '1.1em',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseOver={(e) => {
-                        e.target.style.transform = 'scale(1.2)';
-                        e.target.style.filter = 'brightness(1.2)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.target.style.transform = 'scale(1)';
-                        e.target.style.filter = 'brightness(1)';
-                      }}
-                      title="Click to view location"
-                    >
-                      📍
-                    </span>
-                  )}
-                  {photoEntry.content && photoEntry.content !== 'Photo upload' && (
-                    <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
-                      "{photoEntry.content}"
-                    </div>
-                  )}
-                </div>
               </div>
             );
           }
@@ -564,42 +492,6 @@ function PublicBlogView() {
                 boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
               }}
             />
-            <div style={{ 
-              marginTop: '8px', 
-              fontSize: '0.9em', 
-              color: '#666',
-              fontStyle: 'italic'
-            }}>
-              📷 {photoEntry.traveler_name} • {formatDate(photoEntry.timestamp)}
-              {photoEntry.latitude && photoEntry.longitude && (
-                <span 
-                  onClick={() => handleShowLocation(photoEntry)}
-                  style={{ 
-                    marginLeft: '8px',
-                    cursor: 'pointer',
-                    color: '#007bff',
-                    fontSize: '1.1em',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseOver={(e) => {
-                    e.target.style.transform = 'scale(1.2)';
-                    e.target.style.filter = 'brightness(1.2)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.target.style.transform = 'scale(1)';
-                    e.target.style.filter = 'brightness(1)';
-                  }}
-                  title="Click to view location"
-                >
-                  📍
-                </span>
-              )}
-              {photoEntry.content && photoEntry.content !== 'Photo upload' && (
-                <div style={{ marginTop: '4px', fontSize: '0.85em' }}>
-                  "{photoEntry.content}"
-                </div>
-              )}
-            </div>
           </div>
         );
       });
