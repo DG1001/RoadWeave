@@ -773,6 +773,7 @@ function PublicBlogView() {
     refreshAllData();
   };
 
+
   // Update body class for sticky header padding
   useEffect(() => {
     if (isScrolled) {
@@ -843,6 +844,7 @@ function PublicBlogView() {
           </div>
         </div>
       </div>
+
 
       <div className="container">
         {/* Interactive Map */}
