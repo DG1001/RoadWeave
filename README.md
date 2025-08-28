@@ -6,6 +6,10 @@
 
 **RoadWeave** is a collaborative travel blogging platform. Create trips, add travelers, and let AI automatically generate engaging travel blogs from photos, text, and voice recordings with GPS data.
 
+
+https://github.com/user-attachments/assets/bfab7424-db05-4c42-9c6a-260fb53b415d
+
+
 ## ✨ Key Features
 
 - **🤖 AI-Powered Blogging**: Google Gemini automatically generates travel narratives
