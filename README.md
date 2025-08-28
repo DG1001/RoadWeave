@@ -4,7 +4,7 @@
   <img src="logo.png" alt="RoadWeave Logo" width="150" height="150">
 </p>
 
-**RoadWeave** is a Progressive Web App (PWA) that enables collaborative travel blogging. Create trips, add travelers, and let AI automatically generate engaging travel blogs from photos, text, and voice recordings with GPS data.
+**RoadWeave** is a collaborative travel blogging platform. Create trips, add travelers, and let AI automatically generate engaging travel blogs from photos, text, and voice recordings with GPS data.
 
 ## ✨ Key Features
 
@@ -15,7 +15,7 @@
 - **📅 Calendar View**: Navigate blog entries by date with visual calendar
 - **📍 Coordinate Editing**: Admin tools for precise location management
 - **🌍 Multi-language Support**: Blog generation in 19 languages
-- **📱 PWA Experience**: Works offline, installable on mobile devices
+- **📱 Mobile-Friendly**: Responsive design optimized for mobile devices
 - **🔒 Secure Access**: Token-based traveler access, admin dashboard
 
 ## 🚀 Quick Start
@@ -79,7 +79,7 @@ See [Deployment Guide](doc/deployment.md) for production setup with nginx, SSL, 
 ## 🏗️ Technology Stack
 
 **Backend**: Flask, SQLAlchemy, JWT, Google Gemini AI  
-**Frontend**: React.js, Leaflet.js, PWA, Service Worker  
+**Frontend**: React.js, Leaflet.js  
 **Database**: SQLite (configurable)
 
 ## 🎯 Recent Updates

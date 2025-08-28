@@ -270,32 +270,6 @@ AUDIO_TRANSCRIPTION_LOG_COSTS=true
 # Consider upgrading Gemini API plan
 ```
 
-### PWA Issues
-
-#### PWA Not Installing
-**Problem**: No "Add to Home Screen" prompt
-**Solution**:
-```bash
-# Ensure HTTPS in production
-# Check manifest.json is accessible
-curl http://localhost:3000/manifest.json
-
-# Verify service worker registration
-# Check browser console for service worker errors
-
-# For development, use browser Dev Tools > Application > Manifest
-```
-
-#### Offline Functionality Not Working
-**Problem**: App doesn't work offline
-**Solution**:
-```bash
-# Check service worker is registered
-# Browser Dev Tools > Application > Service Workers
-
-# Verify cache strategy in service-worker.js
-# Test offline mode in browser Dev Tools > Network > Offline
-```
 
 ## Network Issues
 
@@ -490,28 +464,9 @@ sqlite3 backend/roadweave.db
 
 ### Safari Issues
 
-#### PWA Installation Problems
-**Problem**: "Add to Home Screen" not working on Safari
-**Solution**:
-- Ensure HTTPS is used
-- Check manifest.json has all required fields
-- Verify apple-touch-icon is present
-- Test on iOS Safari specifically
 
 ### Chrome Issues
 
-#### Service Worker Caching Issues
-**Problem**: Old version cached even after updates
-**Solution**:
-```javascript
-// In browser console
-navigator.serviceWorker.getRegistrations()
-  .then(registrations => {
-    registrations.forEach(reg => reg.unregister())
-  })
-
-// Or use "Update on reload" in DevTools
-```
 
 ## Debugging Tools
 

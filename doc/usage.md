@@ -174,13 +174,6 @@ RoadWeave offers two ways to set location for your entries:
 - **Manual Selection**: Shows "🗺️ Pick from Map" with selected coordinates
 - Easy switching between modes at any time
 
-### 5. Offline Usage
-
-RoadWeave works as a Progressive Web App (PWA):
-- **Install**: Browser may prompt to "Add to Home Screen"
-- **Offline Entries**: Submissions queue when offline
-- **Auto-sync**: Uploads when connection restored
-- **Cache**: Core functionality available without internet
 
 ## Blog Viewing Experience
 
