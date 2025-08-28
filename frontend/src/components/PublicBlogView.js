@@ -75,7 +75,6 @@ function PublicBlogView() {
   const [filteredEntries, setFilteredEntries] = useState([]);
   const [contentPieces, setContentPieces] = useState([]);
   const [filteredContentPieces, setFilteredContentPieces] = useState([]);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [showRefreshFeedback, setShowRefreshFeedback] = useState(false);
   const [miniMapEntry, setMiniMapEntry] = useState(null);
@@ -90,26 +89,6 @@ function PublicBlogView() {
     loadContentPieces();
   }, [token]);
 
-  // Scroll detection for sticky header
-  useEffect(() => {
-    let timeoutId = null;
-    
-    const handleScroll = () => {
-      if (timeoutId) clearTimeout(timeoutId);
-      
-      timeoutId = setTimeout(() => {
-        const scrollTop = window.scrollY;
-        setIsScrolled(scrollTop > 100);
-      }, 50); // Debounce scroll events
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, []);
 
   // Update filtered entries and content when entries or selected date changes
   useEffect(() => {
@@ -774,19 +753,15 @@ function PublicBlogView() {
   };
 
 
-  // Update body class for sticky header padding
+  // Always add sticky header padding since header is always sticky
   useEffect(() => {
-    if (isScrolled) {
-      document.body.classList.add('header-sticky');
-    } else {
-      document.body.classList.remove('header-sticky');
-    }
+    document.body.classList.add('header-sticky');
     
     // Cleanup on unmount
     return () => {
       document.body.classList.remove('header-sticky');
     };
-  }, [isScrolled]);
+  }, []);
 
   if (loading) {
     return (
@@ -822,7 +797,7 @@ function PublicBlogView() {
   return (
     <div>
       <div 
-        className={`header ${isScrolled ? 'sticky' : ''}`}
+        className="header sticky"
         onClick={handleBannerClick}
         title="Click to refresh blog content"
       >
@@ -836,9 +811,6 @@ function PublicBlogView() {
             <h1>{blog?.trip_name || 'Travel Blog'}</h1>
             {isRefreshing && <div className="loading-spinner"></div>}
           </div>
-          <p className="header-description">
-            {blog?.description}
-          </p>
           <div className={`refresh-feedback ${showRefreshFeedback ? 'show' : ''}`}>
             Updated!
           </div>
@@ -1069,10 +1041,27 @@ function PublicBlogView() {
           </div>
         </div>
 
+        {/* Trip Description */}
+        {blog?.description && (
+          <div style={{ 
+            textAlign: 'center', 
+            margin: '30px 20px 20px 20px', 
+            padding: '20px',
+            backgroundColor: '#f8f9fa',
+            borderRadius: '8px',
+            border: '1px solid #dee2e6'
+          }}>
+            <h3 style={{ margin: '0 0 10px 0', color: '#495057' }}>About This Journey</h3>
+            <p style={{ margin: 0, color: '#6c757d', lineHeight: '1.5' }}>
+              {blog.description}
+            </p>
+          </div>
+        )}
+
         {/* Powered by RoadWeave */}
         <div style={{ 
           textAlign: 'center', 
-          margin: '30px 0', 
+          margin: '20px 0 30px 0', 
           fontSize: '0.9em', 
           color: '#666' 
         }}>
