@@ -113,6 +113,7 @@ class Trip(db.Model):
     blog_language = db.Column(db.String(10), default='en')  # Language code (en, es, fr, de, etc.)
     public_enabled = db.Column(db.Boolean, default=False)  # Whether public access is enabled
     public_token = db.Column(db.String(100), unique=True)  # Token for public access
+    reactions_enabled = db.Column(db.Boolean, default=True)  # Whether reactions are enabled in public view
     
     travelers = db.relationship('Traveler', backref='trip', lazy=True, cascade='all, delete-orphan')
     entries = db.relationship('Entry', backref='trip', lazy=True, cascade='all, delete-orphan')
@@ -621,6 +622,7 @@ def get_trips():
         'blog_language': trip.blog_language,
         'public_enabled': trip.public_enabled,
         'public_token': trip.public_token,
+        'reactions_enabled': trip.reactions_enabled,
         'created_at': timestamp_to_iso(trip.created_at),
         'traveler_count': len(trip.travelers),
         'entry_count': len(trip.entries)
@@ -923,6 +925,24 @@ def toggle_public_access(trip_id):
         'public_token': trip.public_token
     })
 
+@app.route('/api/admin/trips/<int:trip_id>/reactions', methods=['PUT'])
+@jwt_required()
+def toggle_reactions(trip_id):
+    if get_jwt_identity() != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    trip = Trip.query.get_or_404(trip_id)
+    data = request.get_json()
+    enabled = data.get('enabled', True)
+    
+    trip.reactions_enabled = enabled
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Reactions setting updated successfully',
+        'reactions_enabled': trip.reactions_enabled
+    })
+
 @app.route('/api/public/<token>')
 def get_public_blog(token):
     trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
@@ -934,6 +954,7 @@ def get_public_blog(token):
         'description': trip.description,
         'blog_content': trip.blog_content,
         'blog_language': trip.blog_language,
+        'reactions_enabled': trip.reactions_enabled,
         'created_at': timestamp_to_iso(trip.created_at)
     })
 
@@ -1409,6 +1430,8 @@ def migrate_database():
                 migrations_needed.append('ALTER TABLE trip ADD COLUMN public_enabled BOOLEAN DEFAULT 0')
             if 'public_token' not in trip_columns:
                 migrations_needed.append('ALTER TABLE trip ADD COLUMN public_token VARCHAR(100)')
+            if 'reactions_enabled' not in trip_columns:
+                migrations_needed.append('ALTER TABLE trip ADD COLUMN reactions_enabled BOOLEAN DEFAULT 1')
         
         # Check if entry table needs disabled column
         if 'entry' in existing_tables:

@@ -341,14 +341,16 @@ function PublicBlogView() {
         </div>
       );
 
-      // Add reactions component for this piece
-      elements.push(
-        <PostReactions
-          key={`reactions-${piece.id}`}
-          token={token}
-          contentId={piece.id}
-        />
-      );
+      // Add reactions component for this piece (only if enabled)
+      if (blog?.reactions_enabled) {
+        elements.push(
+          <PostReactions
+            key={`reactions-${piece.id}`}
+            token={token}
+            contentId={piece.id}
+          />
+        );
+      }
 
       // Add separator between pieces (except for the last one)
       if (index < sortedPieces.length - 1) {

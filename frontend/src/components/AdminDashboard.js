@@ -228,6 +228,31 @@ function AdminDashboard() {
     }
   };
 
+  const toggleReactions = async (tripId, currentEnabled) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await axios.put(
+        getApiUrl(`/api/admin/trips/${tripId}/reactions`),
+        { enabled: !currentEnabled },
+        { headers: getAuthHeaders() }
+      );
+      
+      const message = !currentEnabled 
+        ? 'Reactions enabled for public viewers!' 
+        : 'Reactions disabled for public viewers.';
+      
+      setSuccess(message);
+      loadTrips(); // Refresh trips list
+    } catch (err) {
+      setError('Failed to update reactions setting');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('adminToken');
     navigate('/admin');
@@ -383,6 +408,21 @@ function AdminDashboard() {
                         }}
                       >
                         {trip.public_enabled ? '🌐 Public' : '🔒 Private'}
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleReactions(trip.id, trip.reactions_enabled);
+                        }}
+                        className="btn"
+                        style={{ 
+                          marginRight: '10px',
+                          backgroundColor: trip.reactions_enabled ? '#007bff' : '#6c757d',
+                          color: 'white'
+                        }}
+                        title={trip.reactions_enabled ? 'Reactions enabled in public view' : 'Reactions disabled in public view'}
+                      >
+                        {trip.reactions_enabled ? '👍 Reactions On' : '🚫 Reactions Off'}
                       </button>
                       <button 
                         onClick={(e) => {
