@@ -1,4 +1,4 @@
-# RoadWeave - Collaborative Travel Blog
+# RoadWeave - Collaborative Travel Blog [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/DG1001/RoadWeave)
 
 <p align="center">
   <img src="logo.png" alt="RoadWeave Logo" width="150" height="150">
