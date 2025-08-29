@@ -151,6 +151,20 @@ class TripContent(db.Model):
     
     trip = db.relationship('Trip', backref=db.backref('content_pieces', lazy=True, cascade='all, delete-orphan'))
 
+class PostReaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    trip_id = db.Column(db.Integer, db.ForeignKey('trip.id'), nullable=False)
+    content_piece_id = db.Column(db.Integer, db.ForeignKey('trip_content.id'), nullable=False)
+    reaction_type = db.Column(db.String(20), nullable=False)  # 'like', 'applause', 'support', 'love', 'insightful', 'funny'
+    count = db.Column(db.Integer, default=0, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    trip = db.relationship('Trip', backref=db.backref('reactions', lazy=True, cascade='all, delete-orphan'))
+    content_piece = db.relationship('TripContent', backref=db.backref('reactions', lazy=True, cascade='all, delete-orphan'))
+    
+    __table_args__ = (db.UniqueConstraint('content_piece_id', 'reaction_type', name='unique_content_reaction'),)
+
 def generate_random_password(length=12):
     """Generate a secure random password"""
     characters = string.ascii_letters + string.digits + "!@#$%^&*"
@@ -1047,6 +1061,109 @@ def get_public_content_by_date(token, date):
         } for content in content_pieces]
     })
 
+@app.route('/api/public/<token>/reactions/<int:content_id>')
+def get_reactions(token, content_id):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    # Check if content piece exists and belongs to this trip
+    content_piece = TripContent.query.filter_by(id=content_id, trip_id=trip.id).first()
+    if not content_piece:
+        return jsonify({'error': 'Content not found'}), 404
+    
+    # Get all reactions for this content piece
+    reactions = PostReaction.query.filter_by(content_piece_id=content_id).all()
+    
+    # Return reaction counts
+    reaction_counts = {
+        'like': 0,
+        'applause': 0,
+        'support': 0,
+        'love': 0,
+        'insightful': 0,
+        'funny': 0
+    }
+    
+    for reaction in reactions:
+        if reaction.reaction_type in reaction_counts:
+            reaction_counts[reaction.reaction_type] = reaction.count
+    
+    return jsonify(reaction_counts)
+
+@app.route('/api/public/<token>/reactions/<int:content_id>', methods=['POST'])
+def add_reaction(token, content_id):
+    trip = Trip.query.filter_by(public_token=token, public_enabled=True).first()
+    if not trip:
+        return jsonify({'error': 'Blog not found or not publicly accessible'}), 404
+    
+    # Check if content piece exists and belongs to this trip
+    content_piece = TripContent.query.filter_by(id=content_id, trip_id=trip.id).first()
+    if not content_piece:
+        return jsonify({'error': 'Content not found'}), 404
+    
+    data = request.get_json()
+    reaction_type = data.get('reaction_type')
+    action = data.get('action')  # 'add' or 'remove'
+    
+    # Validate reaction type
+    valid_reactions = ['like', 'applause', 'support', 'love', 'insightful', 'funny']
+    if reaction_type not in valid_reactions:
+        return jsonify({'error': 'Invalid reaction type'}), 400
+    
+    # Validate action
+    if action not in ['add', 'remove']:
+        return jsonify({'error': 'Action must be "add" or "remove"'}), 400
+    
+    # Get or create the reaction record
+    reaction = PostReaction.query.filter_by(
+        content_piece_id=content_id, 
+        reaction_type=reaction_type
+    ).first()
+    
+    if not reaction:
+        reaction = PostReaction(
+            trip_id=trip.id,
+            content_piece_id=content_id,
+            reaction_type=reaction_type,
+            count=0
+        )
+        db.session.add(reaction)
+    
+    # Update count based on action
+    if action == 'add':
+        reaction.count += 1
+    elif action == 'remove' and reaction.count > 0:
+        reaction.count -= 1
+    
+    reaction.updated_at = datetime.utcnow()
+    
+    try:
+        db.session.commit()
+        
+        # Return updated reaction counts for this content
+        reactions = PostReaction.query.filter_by(content_piece_id=content_id).all()
+        reaction_counts = {
+            'like': 0,
+            'applause': 0,
+            'support': 0,
+            'love': 0,
+            'insightful': 0,
+            'funny': 0
+        }
+        
+        for r in reactions:
+            if r.reaction_type in reaction_counts:
+                reaction_counts[r.reaction_type] = r.count
+        
+        return jsonify({
+            'message': f'Reaction {action}ed successfully',
+            'reactions': reaction_counts
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update reaction'}), 500
+
 @app.route('/api/admin/entries/<int:entry_id>/coordinates', methods=['PUT'])
 @jwt_required()
 def update_entry_coordinates(entry_id):
@@ -1314,6 +1431,24 @@ def migrate_database():
                     entry_ids TEXT,
                     content_date DATE NOT NULL,
                     FOREIGN KEY (trip_id) REFERENCES trip (id) ON DELETE CASCADE
+                )
+            ''')
+        
+        # Check if post_reaction table exists, create if not
+        if 'post_reaction' not in existing_tables:
+            print("🔄 Creating post_reaction table...")
+            migrations_needed.append('''
+                CREATE TABLE post_reaction (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    trip_id INTEGER NOT NULL,
+                    content_piece_id INTEGER NOT NULL,
+                    reaction_type VARCHAR(20) NOT NULL,
+                    count INTEGER DEFAULT 0 NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (trip_id) REFERENCES trip (id) ON DELETE CASCADE,
+                    FOREIGN KEY (content_piece_id) REFERENCES trip_content (id) ON DELETE CASCADE,
+                    UNIQUE(content_piece_id, reaction_type)
                 )
             ''')
         

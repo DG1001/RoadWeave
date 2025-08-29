@@ -8,6 +8,7 @@ import 'leaflet/dist/leaflet.css';
 import { getApiUrl } from '../config/api';
 import CalendarView from './CalendarView';
 import MiniMapModal from './MiniMapModal';
+import PostReactions from './PostReactions';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -338,6 +339,15 @@ function PublicBlogView() {
             </span>
           )}
         </div>
+      );
+
+      // Add reactions component for this piece
+      elements.push(
+        <PostReactions
+          key={`reactions-${piece.id}`}
+          token={token}
+          contentId={piece.id}
+        />
       );
 
       // Add separator between pieces (except for the last one)
