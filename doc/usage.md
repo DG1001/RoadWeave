@@ -42,6 +42,12 @@ Complete guide for admins and travelers using RoadWeave.
 - Share the public link for read-only access
 - Click "View Public Blog" to see the public version
 
+**Reactions Control:**
+- Toggle "👍 Reactions On" to "🚫 Reactions Off" to control public engagement
+- When enabled: Public viewers can react to blog posts with 6 LinkedIn-style emotions
+- When disabled: Clean, content-focused view without reaction buttons
+- Setting applies immediately to public view
+
 **Regenerate Blog:**
 - Click "Regenerate Blog" to rebuild content from all entries
 - Useful after changing language or when content needs refresh
@@ -209,6 +215,30 @@ RoadWeave offers two ways to set location for your entries:
 - Click "▶ Show Details" to expand
 - View raw entries with timestamps
 - See traveler names and locations
+
+### Public Reactions System
+
+**Interactive Engagement:**
+- **LinkedIn-Style Reactions**: Choose from 6 emotional responses:
+  - 👍 **Like** - General approval and enjoyment
+  - 👏 **Applause** - Appreciation for achievements or impressive moments  
+  - 💪 **Support** - Encouragement and solidarity
+  - ❤️ **Love** - Deep emotional connection or beauty
+  - 💡 **Insightful** - Educational or thought-provoking content
+  - 😂 **Funny** - Humor and entertainment
+
+**How It Works:**
+- Click any reaction button to react to a blog post
+- One reaction per post - click the same reaction again to remove it
+- Switch reactions by clicking a different one
+- See total counts from all public viewers
+- Your choice is remembered in your browser (no account needed)
+
+**Privacy Features:**
+- No personal data stored on servers
+- Reactions tracked locally in browser localStorage  
+- Only aggregated counts are saved and displayed
+- Completely anonymous engagement system
 
 ### Entry Processing
 

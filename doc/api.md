@@ -52,6 +52,7 @@ Authorization: Bearer <jwt-token>
     "blog_language": "en",
     "public_enabled": false,
     "public_token": null,
+    "reactions_enabled": true,
     "created_at": "2024-01-15T10:30:00",
     "traveler_count": 3,
     "entry_count": 15
@@ -240,6 +241,25 @@ Content-Type: application/json
 }
 ```
 
+#### Toggle Trip Reactions
+```bash
+PUT /api/admin/trips/{trip_id}/reactions
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+
+{
+  "enabled": true
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Reactions setting updated successfully",
+  "reactions_enabled": true
+}
+```
+
 ## Traveler Endpoints
 
 Traveler endpoints use unique tokens in the URL path for authentication.
@@ -331,7 +351,8 @@ GET /api/public/{public_token}
   "trip_name": "European Adventure",
   "description": "Our amazing trip across Europe",
   "blog_content": "# European Adventure\n\nOur journey began...",
-  "blog_language": "en", 
+  "blog_language": "en",
+  "reactions_enabled": true,
   "created_at": "2024-01-15T10:30:00"
 }
 ```
@@ -354,6 +375,52 @@ GET /api/public/{public_token}/entries
     "filename": "uuid_sunset.jpg"
   }
 ]
+```
+
+### Public Reactions System
+
+#### Get Reactions for Content
+```bash
+GET /api/public/{public_token}/reactions/{content_id}
+```
+**Response:**
+```json
+{
+  "like": 5,
+  "applause": 2,
+  "support": 1,
+  "love": 8,
+  "insightful": 3,
+  "funny": 0
+}
+```
+
+#### Update Content Reaction
+```bash
+POST /api/public/{public_token}/reactions/{content_id}
+Content-Type: application/json
+
+{
+  "reaction_type": "like",
+  "action": "add"
+}
+```
+**Valid reaction types:** `"like"`, `"applause"`, `"support"`, `"love"`, `"insightful"`, `"funny"`  
+**Valid actions:** `"add"`, `"remove"`
+
+**Response:**
+```json
+{
+  "message": "Reaction added successfully",
+  "reactions": {
+    "like": 6,
+    "applause": 2,
+    "support": 1,
+    "love": 8,
+    "insightful": 3,
+    "funny": 0
+  }
+}
 ```
 
 ## File Endpoints

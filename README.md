@@ -19,6 +19,7 @@ https://github.com/user-attachments/assets/bfab7424-db05-4c42-9c6a-260fb53b415d
 - **📅 Calendar View**: Navigate blog entries by date with visual calendar
 - **📍 Coordinate Editing**: Admin tools for precise location management
 - **🌍 Multi-language Support**: Blog generation in 19 languages
+- **👍 Interactive Reactions**: LinkedIn-style reactions for public engagement
 - **📱 Mobile-Friendly**: Responsive design optimized for mobile devices
 - **🔒 Secure Access**: Token-based traveler access, admin dashboard
 
@@ -75,6 +76,7 @@ See [Deployment Guide](doc/deployment.md) for production setup with nginx, SSL, 
 
 - **[Setup & Configuration](doc/setup.md)** - Detailed installation guide
 - **[Usage Guide](doc/usage.md)** - Admin and traveler workflows  
+- **[Interactive Reactions](doc/reactions.md)** - Public engagement system guide
 - **[API Reference](doc/api.md)** - Complete API documentation
 - **[AI Features](doc/ai-features.md)** - Photo analysis and audio transcription
 - **[Deployment Guide](doc/deployment.md)** - Production deployment
@@ -88,7 +90,15 @@ See [Deployment Guide](doc/deployment.md) for production setup with nginx, SSL, 
 
 ## 🎯 Recent Updates
 
-### Click-to-Jump Navigation & Location Mini-Maps (Latest!) 🗺️
+### Interactive Reactions System (Latest!) 👍
+- **LinkedIn-Style Reactions**: 6 reaction types (Like, Applause, Support, Love, Insightful, Funny) for public blog engagement
+- **Admin Control**: Toggle reactions on/off per trip with visual feedback buttons  
+- **Privacy-Friendly**: No user tracking - reactions stored locally, counts aggregated anonymously
+- **One Reaction Per User**: Users can select one reaction per post, stored in browser localStorage
+- **Real-time Counts**: See reaction counts from all visitors with optimistic UI updates
+- **Mobile Responsive**: Styled reaction buttons adapt to all screen sizes
+
+### Click-to-Jump Navigation & Location Mini-Maps 🗺️
 - **Interactive Map Popups**: Click on mini-images, text, or audio buttons in map markers to jump directly to that content in the blog
 - **Smart Date Filtering**: Automatically clears date filters when jumping to entries from different dates
 - **Location Mini-Maps**: Click 📍 icons next to timestamps to see exactly where entries were created
