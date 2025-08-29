@@ -329,117 +329,105 @@ function AdminDashboard() {
             ) : (
               <div>
                 {trips.map(trip => (
-                  <div key={trip.id} style={{ 
-                    padding: '10px', 
-                    border: selectedTrip?.id === trip.id ? '2px solid #007bff' : '1px solid #ddd',
-                    borderRadius: '4px',
-                    marginBottom: '10px',
-                    cursor: 'pointer'
-                  }} onClick={() => selectTrip(trip)}>
-                    <h4>{trip.name}</h4>
-                    <p>{trip.description}</p>
-                    <small>
-                      {trip.traveler_count} travelers, {trip.entry_count} entries
+                  <div 
+                    key={trip.id} 
+                    className={`trip-card ${selectedTrip?.id === trip.id ? 'selected' : ''}`}
+                    onClick={() => selectTrip(trip)}
+                  >
+                    <div className="trip-header">
+                      <h4>{trip.name}</h4>
+                      <p>{trip.description}</p>
+                      <div className="trip-stats">
+                        {trip.traveler_count} travelers, {trip.entry_count} entries
+                      </div>
                       {regeneratingTrips.has(trip.id) && (
-                        <div style={{ 
-                          color: '#007bff', 
-                          fontWeight: 'bold', 
-                          marginTop: '5px',
-                          fontSize: '0.9em'
-                        }}>
+                        <div className="trip-processing">
                           🔄 Processing {trip.entry_count} entries with AI...
                         </div>
                       )}
-                    </small>
-                    <div style={{ marginTop: '10px' }}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(`/admin/blog/${trip.id}`, '_blank');
-                        }}
-                        className="btn"
-                        style={{ marginRight: '10px' }}
-                      >
-                        View Blog
-                      </button>
-                      {trip.public_enabled && trip.public_token && (
+                    </div>
+                    <div className="trip-actions">
+                      <div className="action-group primary-actions">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.open(`/public/${trip.public_token}`, '_blank');
+                            window.open(`/admin/blog/${trip.id}`, '_blank');
                           }}
-                          className="btn btn-secondary"
-                          style={{ marginRight: '10px' }}
+                          className="btn btn-primary"
                         >
-                          View Public Blog
+                          📝 View Blog
                         </button>
-                      )}
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!regeneratingTrips.has(trip.id)) {
-                            regenerateBlog(trip.id);
-                          }
-                        }}
-                        disabled={regeneratingTrips.has(trip.id)}
-                        className={`btn btn-secondary ${regeneratingTrips.has(trip.id) ? 'btn-regenerating' : ''}`}
-                        style={{ marginRight: '10px' }}
-                        title={regeneratingTrips.has(trip.id) ? 'Regeneration in progress...' : 'Click to regenerate blog content'}
-                      >
-                        {regeneratingTrips.has(trip.id) ? (
-                          <>
-                            <span className="btn-spinner"></span>
-                            Regenerating...
-                          </>
-                        ) : (
-                          'Regenerate Blog'
+                        {trip.public_enabled && trip.public_token && (
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`/public/${trip.public_token}`, '_blank');
+                            }}
+                            className="btn btn-outline"
+                          >
+                            🌐 View Public
+                          </button>
                         )}
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePublicAccess(trip.id, trip.public_enabled);
-                        }}
-                        className={`btn ${trip.public_enabled ? 'btn-secondary' : ''}`}
-                        style={{ 
-                          marginRight: '10px',
-                          backgroundColor: trip.public_enabled ? '#28a745' : '#6c757d',
-                          color: 'white'
-                        }}
-                      >
-                        {trip.public_enabled ? '🌐 Public' : '🔒 Private'}
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleReactions(trip.id, trip.reactions_enabled);
-                        }}
-                        className="btn"
-                        style={{ 
-                          marginRight: '10px',
-                          backgroundColor: trip.reactions_enabled ? '#007bff' : '#6c757d',
-                          color: 'white'
-                        }}
-                        title={trip.reactions_enabled ? 'Reactions enabled in public view' : 'Reactions disabled in public view'}
-                      >
-                        {trip.reactions_enabled ? '👍 Reactions On' : '🚫 Reactions Off'}
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTrip(trip.id, trip.name);
-                        }}
-                        className="btn"
-                        style={{ 
-                          backgroundColor: '#dc3545',
-                          color: 'white'
-                        }}
-                      >
-                        🗑️ Delete
-                      </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!regeneratingTrips.has(trip.id)) {
+                              regenerateBlog(trip.id);
+                            }
+                          }}
+                          disabled={regeneratingTrips.has(trip.id)}
+                          className={`btn btn-outline ${regeneratingTrips.has(trip.id) ? 'btn-regenerating' : ''}`}
+                          title={regeneratingTrips.has(trip.id) ? 'Regeneration in progress...' : 'Click to regenerate blog content'}
+                        >
+                          {regeneratingTrips.has(trip.id) ? (
+                            <>
+                              <span className="btn-spinner"></span>
+                              Regenerating...
+                            </>
+                          ) : (
+                            '🔄 Regenerate'
+                          )}
+                        </button>
+                      </div>
+                      
+                      <div className="action-group settings-actions">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePublicAccess(trip.id, trip.public_enabled);
+                          }}
+                          className={`btn btn-toggle ${trip.public_enabled ? 'active' : ''}`}
+                          data-toggle-type="public"
+                        >
+                          {trip.public_enabled ? '🌐 Public' : '🔒 Private'}
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleReactions(trip.id, trip.reactions_enabled);
+                          }}
+                          className={`btn btn-toggle ${trip.reactions_enabled ? 'active' : ''}`}
+                          data-toggle-type="reactions"
+                          title={trip.reactions_enabled ? 'Reactions enabled in public view' : 'Reactions disabled in public view'}
+                        >
+                          {trip.reactions_enabled ? '👍 Reactions' : '🚫 No Reactions'}
+                        </button>
+                      </div>
+                      
+                      <div className="action-group danger-actions">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTrip(trip.id, trip.name);
+                          }}
+                          className="btn btn-danger"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </div>
-                    <div style={{ marginTop: '10px', fontSize: '0.9em' }}>
-                      <label style={{ marginRight: '10px' }}>Language:</label>
+                    <div className="trip-language-control">
+                      <label>Language:</label>
                       <select
                         value={trip.blog_language || 'en'}
                         onChange={(e) => {
