@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "旅の思い出を追加",
+    "welcome": "ようこそ、{{name}}さん！",
+    "trip": "旅行：{{tripName}}",
+    "contentType": "コンテンツタイプ",
+    "contentTypes": {
+      "text": "テキスト",
+      "photo": "写真",
+      "audio": "音声"
+    },
+    "textPlaceholder": "この瞬間についての思いを共有してください...",
+    "audioRecording": {
+      "record": "音声録音",
+      "stop": "録音停止",
+      "playing": "音声再生中...",
+      "recorded": "音声録音完了（{{duration}}秒）"
+    },
+    "fileUpload": {
+      "choose": "ファイルを選択",
+      "selected": "選択済み：{{filename}}",
+      "maxSize": "最大ファイルサイズ：32MB"
+    },
+    "location": {
+      "title": "位置情報",
+      "current": "現在位置を使用",
+      "manual": "手動で選択",
+      "getting": "位置情報を取得中...",
+      "accuracy": "精度：±{{meters}}m",
+      "selected": "位置が選択されました",
+      "failed": "位置情報を取得できませんでした"
+    },
+    "actions": {
+      "submit": "思い出を追加",
+      "submitting": "思い出を追加中...",
+      "clear": "クリア",
+      "retry": "再試行"
+    },
+    "messages": {
+      "success": "思い出が正常に追加されました！",
+      "locationSuccess": "位置情報が正常に更新されました！"
+    },
+    "errors": {
+      "invalidToken": "無効または期限切れのリンク",
+      "geolocationNotSupported": "このブラウザーは位置情報をサポートしていません",
+      "microphoneAccess": "マイクにアクセスできませんでした",
+      "uploadFailed": "アップロードに失敗しました。もう一度お試しください。",
+      "networkError": "ネットワークエラー。接続を確認してください。",
+      "fileTooLarge": "ファイルが大きすぎます。最大サイズは32MBです。",
+      "invalidFileType": "無効なファイル形式です。写真または音声ファイルを選択してください。",
+      "locationRequired": "位置情報が必要です。GPSを有効にするか手動で選択してください。",
+      "contentRequired": "コンテンツを入力するかファイルを選択してください。"
+    }
+  }
+}

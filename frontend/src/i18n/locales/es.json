@@ -1,0 +1,69 @@
+{
+  "traveler": {
+    "title": "Agregar Recuerdo de Viaje",
+    "welcome": "¡Bienvenido, {{name}}!",
+    "trip": "Viaje: {{tripName}}",
+    "contentType": "Tipo de Contenido",
+    "contentTypes": {
+      "text": "Texto",
+      "photo": "Foto",
+      "audio": "Audio"
+    },
+    "textPlaceholder": "Comparte tus pensamientos sobre este momento...",
+    "textLabel": "Tus pensamientos:",
+    "audioRecording": {
+      "record": "Grabar Audio",
+      "stop": "Detener Grabación",
+      "playing": "Reproduciendo audio...",
+      "recorded": "Audio grabado ({{duration}}s)"
+    },
+    "fileUpload": {
+      "choose": "Elegir Archivo",
+      "selected": "Seleccionado: {{filename}}",
+      "maxSize": "Tamaño máximo: 32MB"
+    },
+    "location": {
+      "title": "Ubicación",
+      "current": "Usar Ubicación Actual",
+      "manual": "Elegir Manualmente",
+      "getting": "Obteniendo ubicación...",
+      "accuracy": "Precisión: ±{{meters}}m",
+      "selected": "Ubicación seleccionada",
+      "failed": "No se pudo obtener la ubicación",
+      "freshCapture": "Se capturará una ubicación nueva cuando compartas una entrada",
+      "willUse": "Usará la ubicación actual del dispositivo",
+      "currentPrefix": "Actual: "
+    },
+    "actions": {
+      "submit": "Agregar Recuerdo",
+      "submitting": "Agregando recuerdo...",
+      "clear": "Limpiar",
+      "retry": "Reintentar"
+    },
+    "messages": {
+      "success": "¡Recuerdo agregado exitosamente!",
+      "locationSuccess": "¡Ubicación actualizada exitosamente!"
+    },
+    "errors": {
+      "invalidToken": "Enlace inválido o expirado",
+      "geolocationNotSupported": "La geolocalización no es compatible con este navegador",
+      "microphoneAccess": "No se pudo acceder al micrófono",
+      "uploadFailed": "Error en la subida. Por favor, inténtelo de nuevo.",
+      "networkError": "Error de red. Por favor, verifique su conexión.",
+      "fileTooLarge": "El archivo es demasiado grande. El tamaño máximo es 32MB.",
+      "invalidFileType": "Tipo de archivo inválido. Por favor, seleccione una foto o archivo de audio.",
+      "locationRequired": "La ubicación es requerida. Por favor, active el GPS o seleccione manualmente.",
+      "contentRequired": "Por favor, ingrese contenido o seleccione un archivo."
+    },
+    "tips": {
+      "title": "Consejos",
+      "items": [
+        "Permite el acceso a la ubicación para la mejor experiencia",
+        "Se capturan coordenadas GPS frescas cada vez que compartes una entrada",
+        "Tus entradas se añadirán automáticamente al blog del viaje",
+        "La app funciona sin conexión - las entradas se enviarán cuando te reconectes",
+        "Para fotos, trata de capturar momentos y lugares interesantes"
+      ]
+    }
+  }
+}

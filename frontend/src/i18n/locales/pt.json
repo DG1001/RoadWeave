@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "Adicionar Memória de Viagem",
+    "welcome": "Bem-vindo, {{name}}!",
+    "trip": "Viagem: {{tripName}}",
+    "contentType": "Tipo de Conteúdo",
+    "contentTypes": {
+      "text": "Texto",
+      "photo": "Foto",
+      "audio": "Áudio"
+    },
+    "textPlaceholder": "Compartilhe seus pensamentos sobre este momento...",
+    "audioRecording": {
+      "record": "Gravar Áudio",
+      "stop": "Parar Gravação",
+      "playing": "Reproduzindo áudio...",
+      "recorded": "Áudio gravado ({{duration}}s)"
+    },
+    "fileUpload": {
+      "choose": "Escolher Arquivo",
+      "selected": "Selecionado: {{filename}}",
+      "maxSize": "Tamanho máx: 32MB"
+    },
+    "location": {
+      "title": "Localização",
+      "current": "Usar Localização Atual",
+      "manual": "Escolher Manualmente",
+      "getting": "Obtendo localização...",
+      "accuracy": "Precisão: ±{{meters}}m",
+      "selected": "Localização selecionada",
+      "failed": "Não foi possível obter a localização"
+    },
+    "actions": {
+      "submit": "Adicionar Memória",
+      "submitting": "Adicionando memória...",
+      "clear": "Limpar",
+      "retry": "Tentar Novamente"
+    },
+    "messages": {
+      "success": "Memória adicionada com sucesso!",
+      "locationSuccess": "Localização atualizada com sucesso!"
+    },
+    "errors": {
+      "invalidToken": "Link inválido ou expirado",
+      "geolocationNotSupported": "Geolocalização não é suportada por este navegador",
+      "microphoneAccess": "Não foi possível acessar o microfone",
+      "uploadFailed": "Falha no upload. Tente novamente.",
+      "networkError": "Erro de rede. Verifique sua conexão.",
+      "fileTooLarge": "Arquivo muito grande. Tamanho máximo é 32MB.",
+      "invalidFileType": "Tipo de arquivo inválido. Selecione uma foto ou arquivo de áudio.",
+      "locationRequired": "Localização é obrigatória. Ative o GPS ou selecione manualmente.",
+      "contentRequired": "Digite algum conteúdo ou selecione um arquivo."
+    }
+  }
+}

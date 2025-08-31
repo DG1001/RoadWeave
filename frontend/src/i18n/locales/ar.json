@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "إضافة ذاكرة سفر",
+    "welcome": "مرحبا، {{name}}!",
+    "trip": "الرحلة: {{tripName}}",
+    "contentType": "نوع المحتوى",
+    "contentTypes": {
+      "text": "نص",
+      "photo": "صورة",
+      "audio": "صوت"
+    },
+    "textPlaceholder": "شارك أفكارك حول هذه اللحظة...",
+    "audioRecording": {
+      "record": "تسجيل صوتي",
+      "stop": "إيقاف التسجيل",
+      "playing": "تشغيل الصوت...",
+      "recorded": "تم تسجيل الصوت ({{duration}}ث)"
+    },
+    "fileUpload": {
+      "choose": "اختيار ملف",
+      "selected": "مختار: {{filename}}",
+      "maxSize": "الحد الأقصى: 32 ميجابايت"
+    },
+    "location": {
+      "title": "الموقع",
+      "current": "استخدام الموقع الحالي",
+      "manual": "اختيار يدوي",
+      "getting": "جاري الحصول على الموقع...",
+      "accuracy": "الدقة: ±{{meters}}م",
+      "selected": "تم اختيار الموقع",
+      "failed": "لا يمكن الحصول على الموقع"
+    },
+    "actions": {
+      "submit": "إضافة ذاكرة",
+      "submitting": "جاري إضافة الذاكرة...",
+      "clear": "مسح",
+      "retry": "إعادة المحاولة"
+    },
+    "messages": {
+      "success": "تمت إضافة الذاكرة بنجاح!",
+      "locationSuccess": "تم تحديث الموقع بنجاح!"
+    },
+    "errors": {
+      "invalidToken": "رابط غير صالح أو منتهي الصلاحية",
+      "geolocationNotSupported": "تحديد الموقع غير مدعوم في هذا المتصفح",
+      "microphoneAccess": "لا يمكن الوصول إلى الميكروفون",
+      "uploadFailed": "فشل التحميل. يرجى المحاولة مرة أخرى.",
+      "networkError": "خطأ في الشبكة. يرجى فحص اتصالك.",
+      "fileTooLarge": "الملف كبير جداً. الحد الأقصى 32 ميجابايت.",
+      "invalidFileType": "نوع ملف غير صالح. يرجى اختيار صورة أو ملف صوتي.",
+      "locationRequired": "مطلوب تحديد الموقع. يرجى تفعيل نظام المواقع أو الاختيار يدوياً.",
+      "contentRequired": "يرجى إدخال محتوى أو اختيار ملف."
+    }
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "traveler": {
+    "title": "Reiseerinnerung hinzufügen",
+    "welcome": "Willkommen, {{name}}!",
+    "trip": "Reise: {{tripName}}",
+    "contentType": "Inhaltstyp",
+    "contentTypes": {
+      "text": "Text",
+      "photo": "Foto",
+      "audio": "Audio"
+    },
+    "textPlaceholder": "Teile deine Gedanken zu diesem Moment...",
+    "textLabel": "Deine Gedanken:",
+    "audioRecording": {
+      "record": "Audio aufnehmen",
+      "stop": "Aufnahme stoppen",
+      "playing": "Audio wird abgespielt...",
+      "recorded": "Audio aufgenommen ({{duration}}s)"
+    },
+    "fileUpload": {
+      "choose": "Datei auswählen",
+      "selected": "Ausgewählt: {{filename}}",
+      "maxSize": "Max. Dateigröße: 32MB"
+    },
+    "location": {
+      "title": "Standort",
+      "current": "Aktuellen Standort verwenden",
+      "manual": "Manuell auswählen",
+      "getting": "Standort wird ermittelt...",
+      "accuracy": "Genauigkeit: ±{{meters}}m",
+      "selected": "Standort ausgewählt",
+      "failed": "Standort konnte nicht ermittelt werden",
+      "freshCapture": "Ein neuer Standort wird erfasst, wenn du einen Eintrag teilst",
+      "willUse": "Verwendet aktuellen Gerätestandort",
+      "currentPrefix": "Aktuell: "
+    },
+    "actions": {
+      "submit": "Erinnerung hinzufügen",
+      "submitting": "Erinnerung wird hinzugefügt...",
+      "clear": "Löschen",
+      "retry": "Wiederholen"
+    },
+    "messages": {
+      "success": "Erinnerung erfolgreich hinzugefügt!",
+      "locationSuccess": "Standort erfolgreich aktualisiert!"
+    },
+    "errors": {
+      "invalidToken": "Ungültiger oder abgelaufener Link",
+      "geolocationNotSupported": "Geolokation wird von diesem Browser nicht unterstützt",
+      "microphoneAccess": "Zugriff auf Mikrofon nicht möglich",
+      "uploadFailed": "Upload fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung.",
+      "fileTooLarge": "Datei ist zu groß. Maximale Größe ist 32MB.",
+      "invalidFileType": "Ungültiger Dateityp. Bitte wählen Sie ein Foto oder eine Audiodatei.",
+      "locationRequired": "Standort ist erforderlich. Bitte aktivieren Sie GPS oder wählen Sie manuell aus.",
+      "contentRequired": "Bitte geben Sie Inhalt ein oder wählen Sie eine Datei aus."
+    },
+    "tips": {
+      "title": "Tipps",
+      "items": [
+        "Erlauben Sie den Standortzugriff für die beste Erfahrung",
+        "Frische GPS-Koordinaten werden bei jedem Eintrag erfasst",
+        "Ihre Einträge werden automatisch zum Reiseblog hinzugefügt",
+        "Die App funktioniert offline - Einträge werden bei Wiederverbindung übertragen",
+        "Bei Fotos versuchen Sie interessante Momente und Orte festzuhalten"
+      ]
+    }
+  }
+}

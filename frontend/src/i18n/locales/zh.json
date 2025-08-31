@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "添加旅行记忆",
+    "welcome": "欢迎，{{name}}！",
+    "trip": "旅行：{{tripName}}",
+    "contentType": "内容类型",
+    "contentTypes": {
+      "text": "文本",
+      "photo": "照片",
+      "audio": "音频"
+    },
+    "textPlaceholder": "分享您对这一刻的想法...",
+    "audioRecording": {
+      "record": "录制音频",
+      "stop": "停止录制",
+      "playing": "播放音频中...",
+      "recorded": "音频已录制（{{duration}}秒）"
+    },
+    "fileUpload": {
+      "choose": "选择文件",
+      "selected": "已选择：{{filename}}",
+      "maxSize": "最大文件大小：32MB"
+    },
+    "location": {
+      "title": "位置",
+      "current": "使用当前位置",
+      "manual": "手动选择",
+      "getting": "获取位置中...",
+      "accuracy": "精度：±{{meters}}米",
+      "selected": "位置已选择",
+      "failed": "无法获取位置"
+    },
+    "actions": {
+      "submit": "添加记忆",
+      "submitting": "添加记忆中...",
+      "clear": "清除",
+      "retry": "重试"
+    },
+    "messages": {
+      "success": "记忆添加成功！",
+      "locationSuccess": "位置更新成功！"
+    },
+    "errors": {
+      "invalidToken": "无效或过期的链接",
+      "geolocationNotSupported": "此浏览器不支持地理定位",
+      "microphoneAccess": "无法访问麦克风",
+      "uploadFailed": "上传失败。请重试。",
+      "networkError": "网络错误。请检查您的连接。",
+      "fileTooLarge": "文件过大。最大大小为32MB。",
+      "invalidFileType": "无效的文件类型。请选择照片或音频文件。",
+      "locationRequired": "需要位置信息。请启用GPS或手动选择。",
+      "contentRequired": "请输入内容或选择文件。"
+    }
+  }
+}

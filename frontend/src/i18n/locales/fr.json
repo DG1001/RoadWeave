@@ -1,0 +1,69 @@
+{
+  "traveler": {
+    "title": "Ajouter un Souvenir de Voyage",
+    "welcome": "Bienvenue, {{name}} !",
+    "trip": "Voyage : {{tripName}}",
+    "contentType": "Type de Contenu",
+    "contentTypes": {
+      "text": "Texte",
+      "photo": "Photo",
+      "audio": "Audio"
+    },
+    "textPlaceholder": "Partagez vos pensées sur ce moment...",
+    "textLabel": "Vos pensées :",
+    "audioRecording": {
+      "record": "Enregistrer Audio",
+      "stop": "Arrêter l'Enregistrement",
+      "playing": "Lecture audio...",
+      "recorded": "Audio enregistré ({{duration}}s)"
+    },
+    "fileUpload": {
+      "choose": "Choisir un Fichier",
+      "selected": "Sélectionné : {{filename}}",
+      "maxSize": "Taille max : 32MB"
+    },
+    "location": {
+      "title": "Localisation",
+      "current": "Utiliser la Position Actuelle",
+      "manual": "Choisir Manuellement",
+      "getting": "Obtention de la position...",
+      "accuracy": "Précision : ±{{meters}}m",
+      "selected": "Localisation sélectionnée",
+      "failed": "Impossible d'obtenir la position",
+      "freshCapture": "Une nouvelle position sera capturée lors du partage d'une entrée",
+      "willUse": "Utilisera la position actuelle de l'appareil",
+      "currentPrefix": "Actuel : "
+    },
+    "actions": {
+      "submit": "Ajouter le Souvenir",
+      "submitting": "Ajout du souvenir...",
+      "clear": "Effacer",
+      "retry": "Réessayer"
+    },
+    "messages": {
+      "success": "Souvenir ajouté avec succès !",
+      "locationSuccess": "Localisation mise à jour avec succès !"
+    },
+    "errors": {
+      "invalidToken": "Lien invalide ou expiré",
+      "geolocationNotSupported": "La géolocalisation n'est pas prise en charge par ce navigateur",
+      "microphoneAccess": "Impossible d'accéder au microphone",
+      "uploadFailed": "Échec du téléchargement. Veuillez réessayer.",
+      "networkError": "Erreur réseau. Veuillez vérifier votre connexion.",
+      "fileTooLarge": "Le fichier est trop volumineux. La taille maximale est de 32MB.",
+      "invalidFileType": "Type de fichier invalide. Veuillez sélectionner une photo ou un fichier audio.",
+      "locationRequired": "La localisation est requise. Veuillez activer le GPS ou sélectionner manuellement.",
+      "contentRequired": "Veuillez saisir du contenu ou sélectionner un fichier."
+    },
+    "tips": {
+      "title": "Conseils",
+      "items": [
+        "Autorisez l'accès à la localisation pour la meilleure expérience",
+        "De nouvelles coordonnées GPS sont capturées à chaque partage d'entrée",
+        "Vos entrées seront ajoutées automatiquement au blog de voyage",
+        "L'application fonctionne hors ligne - les entrées seront envoyées lors de la reconnexion",
+        "Pour les photos, essayez de capturer des moments et lieux intéressants"
+      ]
+    }
+  }
+}

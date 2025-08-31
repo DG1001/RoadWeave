@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "Add Travel Memory",
+    "welcome": "Welcome, {{name}}!",
+    "trip": "Trip: {{tripName}}",
+    "contentType": "Content Type",
+    "contentTypes": {
+      "text": "Text",
+      "photo": "Photo",
+      "audio": "Audio"
+    },
+    "textPlaceholder": "Share your thoughts about this moment...",
+    "audioRecording": {
+      "record": "Record Audio",
+      "stop": "Stop Recording",
+      "playing": "Playing audio...",
+      "recorded": "Audio recorded ({{duration}}s)"
+    },
+    "fileUpload": {
+      "choose": "Choose File",
+      "selected": "Selected: {{filename}}",
+      "maxSize": "Max file size: 32MB"
+    },
+    "location": {
+      "title": "Location",
+      "current": "Use Current Location",
+      "manual": "Choose Manually",
+      "getting": "Getting location...",
+      "accuracy": "Accuracy: ±{{meters}}m",
+      "selected": "Location selected",
+      "failed": "Could not get location"
+    },
+    "actions": {
+      "submit": "Add Memory",
+      "submitting": "Adding memory...",
+      "clear": "Clear",
+      "retry": "Retry"
+    },
+    "messages": {
+      "success": "Memory added successfully!",
+      "locationSuccess": "Location updated successfully!"
+    },
+    "errors": {
+      "invalidToken": "Invalid or expired link",
+      "geolocationNotSupported": "Geolocation is not supported by this browser",
+      "microphoneAccess": "Could not access microphone",
+      "uploadFailed": "Upload failed. Please try again.",
+      "networkError": "Network error. Please check your connection.",
+      "fileTooLarge": "File is too large. Maximum size is 32MB.",
+      "invalidFileType": "Invalid file type. Please select a photo or audio file.",
+      "locationRequired": "Location is required. Please enable GPS or select manually.",
+      "contentRequired": "Please enter some content or select a file."
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "여행 추억 추가",
+    "welcome": "환영합니다, {{name}}님!",
+    "trip": "여행: {{tripName}}",
+    "contentType": "콘텐츠 유형",
+    "contentTypes": {
+      "text": "텍스트",
+      "photo": "사진",
+      "audio": "오디오"
+    },
+    "textPlaceholder": "이 순간에 대한 생각을 공유해주세요...",
+    "audioRecording": {
+      "record": "오디오 녹음",
+      "stop": "녹음 중지",
+      "playing": "오디오 재생 중...",
+      "recorded": "오디오 녹음됨 ({{duration}}초)"
+    },
+    "fileUpload": {
+      "choose": "파일 선택",
+      "selected": "선택됨: {{filename}}",
+      "maxSize": "최대 파일 크기: 32MB"
+    },
+    "location": {
+      "title": "위치",
+      "current": "현재 위치 사용",
+      "manual": "수동 선택",
+      "getting": "위치 가져오는 중...",
+      "accuracy": "정확도: ±{{meters}}m",
+      "selected": "위치 선택됨",
+      "failed": "위치를 가져올 수 없습니다"
+    },
+    "actions": {
+      "submit": "추억 추가",
+      "submitting": "추억 추가 중...",
+      "clear": "지우기",
+      "retry": "재시도"
+    },
+    "messages": {
+      "success": "추억이 성공적으로 추가되었습니다!",
+      "locationSuccess": "위치가 성공적으로 업데이트되었습니다!"
+    },
+    "errors": {
+      "invalidToken": "유효하지 않거나 만료된 링크",
+      "geolocationNotSupported": "이 브라우저는 위치정보를 지원하지 않습니다",
+      "microphoneAccess": "마이크에 액세스할 수 없습니다",
+      "uploadFailed": "업로드 실패. 다시 시도해주세요.",
+      "networkError": "네트워크 오류. 연결을 확인해주세요.",
+      "fileTooLarge": "파일이 너무 큽니다. 최대 크기는 32MB입니다.",
+      "invalidFileType": "유효하지 않은 파일 형식입니다. 사진 또는 오디오 파일을 선택해주세요.",
+      "locationRequired": "위치가 필요합니다. GPS를 활성화하거나 수동으로 선택해주세요.",
+      "contentRequired": "콘텐츠를 입력하거나 파일을 선택해주세요."
+    }
+  }
+}

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { getApiUrl } from '../config/api';
 import LocationPicker from './LocationPicker';
 
 function TravelerPWA() {
   const { token } = useParams();
+  const { t, i18n } = useTranslation();
   const [traveler, setTraveler] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,18 +35,25 @@ function TravelerPWA() {
     getCurrentLocation();
   }, [token]);
 
+  // Auto-switch language when traveler data loads
+  useEffect(() => {
+    if (traveler?.trip?.blog_language) {
+      i18n.changeLanguage(traveler.trip.blog_language);
+    }
+  }, [traveler, i18n]);
+
   const verifyToken = async () => {
     try {
       const response = await axios.get(getApiUrl(`/api/traveler/verify/${token}`));
       setTraveler(response.data.traveler);
     } catch (err) {
-      setError('Invalid or expired link');
+      setError(t('traveler.errors.invalidToken'));
     }
   };
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by this browser');
+      setError(t('traveler.errors.geolocationNotSupported'));
       return;
     }
 
@@ -89,7 +98,7 @@ function TravelerPWA() {
       mediaRecorder.current.start();
       setIsRecording(true);
     } catch (err) {
-      setError('Could not access microphone');
+      setError(t('traveler.errors.microphoneAccess'));
     }
   };
 
@@ -278,7 +287,7 @@ function TravelerPWA() {
       formData.append('file', audioFile);
       formData.append('content', 'Voice recording');
     } else {
-      setError('Please provide content for your entry');
+      setError(t('traveler.errors.contentRequired'));
       setLoading(false);
       return;
     }
@@ -300,7 +309,7 @@ function TravelerPWA() {
         fileInputRef.current.value = '';
       }
       
-      setSuccess('Entry submitted successfully!');
+      setSuccess(t('traveler.messages.success'));
       
       // Refresh location for next entry
       getCurrentLocation();
@@ -308,10 +317,9 @@ function TravelerPWA() {
       if (err.response?.data?.offline) {
         setSuccess('You are offline. Entry will be submitted when connection is restored.');
       } else if (err.response?.status === 413) {
-        const maxSizeMB = err.response?.data?.max_size_mb || 32;
-        setError(`File too large! Maximum file size is ${maxSizeMB}MB. Please choose a smaller file or compress your image/audio.`);
+        setError(t('traveler.errors.fileTooLarge'));
       } else {
-        setError(err.response?.data?.error || 'Failed to submit entry');
+        setError(err.response?.data?.error || t('traveler.errors.uploadFailed'));
       }
     } finally {
       setLoading(false);
@@ -326,7 +334,7 @@ function TravelerPWA() {
           {error ? (
             <div className="error">{error}</div>
           ) : (
-            <div className="loading">Verifying access...</div>
+            <div className="loading">{t('traveler.title')}</div>
           )}
         </div>
       </div>
@@ -341,7 +349,10 @@ function TravelerPWA() {
           <h1>RoadWeave</h1>
         </div>
         <p style={{ margin: 0, textAlign: 'center' }}>
-          Welcome {traveler.name} to {traveler.trip_name}
+          {t('traveler.welcome', { name: traveler.name })}
+        </p>
+        <p style={{ margin: 0, textAlign: 'center', fontSize: '0.9em', color: '#666' }}>
+          {t('traveler.trip', { tripName: traveler.trip_name })}
         </p>
       </div>
 
@@ -352,25 +363,25 @@ function TravelerPWA() {
 
         {/* Location Status */}
         <div className="card">
-          <h3>Location Status</h3>
+          <h3>{t('traveler.location.title')}</h3>
           {locationLoading ? (
-            <p>Getting your location...</p>
+            <p>{t('traveler.location.getting')}</p>
           ) : updatingLocation ? (
             <p style={{ color: '#007bff' }}>📍 Updating location for entry...</p>
           ) : location ? (
             <div>
               <p style={{ color: '#28a745' }}>
-                ✓ Location captured: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
+                ✓ {t('traveler.location.selected')}: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}
               </p>
               <p style={{ fontSize: '0.9em', color: '#666', margin: '5px 0 0 0' }}>
-                📍 Fresh location will be captured when you share an entry
+                📍 {t('traveler.location.freshCapture')}
               </p>
             </div>
           ) : (
             <div>
-              <p style={{ color: '#dc3545' }}>⚠ Location not available</p>
+              <p style={{ color: '#dc3545' }}>⚠ {t('traveler.location.failed')}</p>
               <button onClick={getCurrentLocation} className="btn btn-secondary">
-                Try Again
+                {t('traveler.actions.retry')}
               </button>
             </div>
           )}
@@ -378,11 +389,11 @@ function TravelerPWA() {
 
         {/* Entry Form */}
         <div className="card">
-          <h3>Share Your Experience</h3>
+          <h3>{t('traveler.title')}</h3>
           <form onSubmit={submitEntry}>
             {/* Entry Type Selection */}
             <div className="form-group">
-              <label>What would you like to share?</label>
+              <label>{t('traveler.contentType')}</label>
               <div style={{ 
                 display: 'flex', 
                 flexWrap: 'wrap',
@@ -414,7 +425,7 @@ function TravelerPWA() {
                   }}
                 >
                   <div style={{ fontSize: '28px', marginBottom: '4px' }}>📝</div>
-                  <div style={{ fontSize: '12px', fontWeight: '500' }}>Text</div>
+                  <div style={{ fontSize: '12px', fontWeight: '500' }}>{t('traveler.contentTypes.text')}</div>
                 </button>
 
                 <button
@@ -441,7 +452,7 @@ function TravelerPWA() {
                   }}
                 >
                   <div style={{ fontSize: '28px', marginBottom: '4px' }}>📷</div>
-                  <div style={{ fontSize: '12px', fontWeight: '500' }}>Photo</div>
+                  <div style={{ fontSize: '12px', fontWeight: '500' }}>{t('traveler.contentTypes.photo')}</div>
                 </button>
 
                 <button
@@ -468,7 +479,7 @@ function TravelerPWA() {
                   }}
                 >
                   <div style={{ fontSize: '28px', marginBottom: '4px' }}>🎤</div>
-                  <div style={{ fontSize: '12px', fontWeight: '500' }}>Voice</div>
+                  <div style={{ fontSize: '12px', fontWeight: '500' }}>{t('traveler.contentTypes.audio')}</div>
                 </button>
               </div>
             </div>
@@ -476,11 +487,11 @@ function TravelerPWA() {
             {/* Text Entry */}
             {entryType === 'text' && (
               <div className="form-group">
-                <label>Your thoughts:</label>
+                <label>{t('traveler.textLabel')}</label>
                 <textarea
                   value={textContent}
                   onChange={(e) => setTextContent(e.target.value)}
-                  placeholder="Share what you're experiencing..."
+                  placeholder={t('traveler.textPlaceholder')}
                   required
                 />
               </div>
@@ -498,7 +509,7 @@ function TravelerPWA() {
                       className="btn btn-secondary"
                       style={{ fontSize: '0.9em' }}
                     >
-                      📷 Take Photo
+                      📷 {t('traveler.fileUpload.choose')}
                     </button>
                     <button
                       type="button"
@@ -506,7 +517,7 @@ function TravelerPWA() {
                       className="btn btn-secondary"
                       style={{ fontSize: '0.9em' }}
                     >
-                      📁 Choose File
+                      📁 {t('traveler.fileUpload.choose')}
                     </button>
                   </div>
                   
@@ -574,7 +585,7 @@ function TravelerPWA() {
                       className="btn"
                       style={{ backgroundColor: '#dc3545' }}
                     >
-                      🎤 Start Recording
+                      🎤 {t('traveler.audioRecording.record')}
                     </button>
                   )}
                   
@@ -586,17 +597,17 @@ function TravelerPWA() {
                         className="btn"
                         style={{ backgroundColor: '#dc3545' }}
                       >
-                        ⏹ Stop Recording
+                        ⏹ {t('traveler.audioRecording.stop')}
                       </button>
                       <p style={{ marginTop: '10px', color: '#dc3545' }}>
-                        🔴 Recording in progress...
+                        🔴 {t('traveler.audioRecording.playing')}
                       </p>
                     </div>
                   )}
                   
                   {audioBlob && (
                     <div>
-                      <p style={{ color: '#28a745' }}>✓ Recording ready</p>
+                      <p style={{ color: '#28a745' }}>✓ {t('traveler.audioRecording.recorded', { duration: '?' })}</p>
                       <audio controls src={URL.createObjectURL(audioBlob)} />
                       <br />
                       <button
@@ -608,7 +619,7 @@ function TravelerPWA() {
                         className="btn btn-secondary"
                         style={{ marginTop: '10px' }}
                       >
-                        Record Again
+                        {t('traveler.audioRecording.record')}
                       </button>
                     </div>
                   )}
@@ -618,7 +629,7 @@ function TravelerPWA() {
 
             {/* Location Selection */}
             <div className="form-group" style={{ marginTop: '20px' }}>
-              <label>Location for this entry:</label>
+              <label>{t('traveler.location.title')}:</label>
               <div style={{ marginTop: '10px' }}>
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
                   <button
@@ -635,7 +646,7 @@ function TravelerPWA() {
                       fontSize: '14px'
                     }}
                   >
-                    📱 Use Current GPS
+                    📱 {t('traveler.location.current')}
                   </button>
                   <button
                     type="button"
@@ -651,7 +662,7 @@ function TravelerPWA() {
                       fontSize: '14px'
                     }}
                   >
-                    🗺️ Pick from Map
+                    🗺️ {t('traveler.location.manual')}
                   </button>
                 </div>
                 
@@ -664,10 +675,10 @@ function TravelerPWA() {
                     border: '1px solid #dee2e6'
                   }}>
                     <div style={{ color: '#6c757d' }}>
-                      📍 Will use current device location
+                      📍 {t('traveler.location.willUse')}
                       {location && (
                         <div style={{ marginTop: '4px', fontSize: '0.8em' }}>
-                          Current: {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+                          {t('traveler.location.currentPrefix')}{location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
                         </div>
                       )}
                     </div>
@@ -698,7 +709,7 @@ function TravelerPWA() {
                         cursor: 'pointer'
                       }}
                     >
-                      Change Location
+                      {t('traveler.location.manual')}
                     </button>
                   </div>
                 )}
@@ -711,7 +722,7 @@ function TravelerPWA() {
               disabled={loading || updatingLocation || (entryType === 'photo' && !selectedFile)}
               style={{ width: '100%', marginTop: '20px' }}
             >
-              {updatingLocation ? '📍 Getting location...' : loading ? 'Submitting...' : 'Share Entry'}
+              {updatingLocation ? `📍 ${t('traveler.location.getting')}` : loading ? t('traveler.actions.submitting') : t('traveler.actions.submit')}
             </button>
           </form>
         </div>
@@ -719,13 +730,11 @@ function TravelerPWA() {
 
         {/* Instructions */}
         <div className="card">
-          <h3>Tips</h3>
+          <h3>{t('traveler.tips.title')}</h3>
           <ul>
-            <li>Allow location access for the best experience</li>
-            <li>Fresh GPS coordinates are captured each time you share an entry</li>
-            <li>Your entries will be added to the trip blog automatically</li>
-            <li>The app works offline - entries will be submitted when you reconnect</li>
-            <li>For photos, try to capture interesting moments and places</li>
+            {t('traveler.tips.items', { returnObjects: true }).map((tip, index) => (
+              <li key={index}>{tip}</li>
+            ))}
           </ul>
         </div>
       </div>

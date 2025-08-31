@@ -1,0 +1,55 @@
+{
+  "traveler": {
+    "title": "Aggiungi Ricordo di Viaggio",
+    "welcome": "Benvenuto, {{name}}!",
+    "trip": "Viaggio: {{tripName}}",
+    "contentType": "Tipo di Contenuto",
+    "contentTypes": {
+      "text": "Testo",
+      "photo": "Foto",
+      "audio": "Audio"
+    },
+    "textPlaceholder": "Condividi i tuoi pensieri su questo momento...",
+    "audioRecording": {
+      "record": "Registra Audio",
+      "stop": "Ferma Registrazione",
+      "playing": "Riproduzione audio...",
+      "recorded": "Audio registrato ({{duration}}s)"
+    },
+    "fileUpload": {
+      "choose": "Scegli File",
+      "selected": "Selezionato: {{filename}}",
+      "maxSize": "Dimensione max: 32MB"
+    },
+    "location": {
+      "title": "Posizione",
+      "current": "Usa Posizione Attuale",
+      "manual": "Scegli Manualmente",
+      "getting": "Ottenimento posizione...",
+      "accuracy": "Precisione: ±{{meters}}m",
+      "selected": "Posizione selezionata",
+      "failed": "Impossibile ottenere la posizione"
+    },
+    "actions": {
+      "submit": "Aggiungi Ricordo",
+      "submitting": "Aggiunta ricordo...",
+      "clear": "Cancella",
+      "retry": "Riprova"
+    },
+    "messages": {
+      "success": "Ricordo aggiunto con successo!",
+      "locationSuccess": "Posizione aggiornata con successo!"
+    },
+    "errors": {
+      "invalidToken": "Link non valido o scaduto",
+      "geolocationNotSupported": "La geolocalizzazione non è supportata da questo browser",
+      "microphoneAccess": "Impossibile accedere al microfono",
+      "uploadFailed": "Caricamento fallito. Riprova.",
+      "networkError": "Errore di rete. Controlla la tua connessione.",
+      "fileTooLarge": "Il file è troppo grande. La dimensione massima è 32MB.",
+      "invalidFileType": "Tipo di file non valido. Seleziona una foto o un file audio.",
+      "locationRequired": "La posizione è richiesta. Attiva il GPS o seleziona manualmente.",
+      "contentRequired": "Inserisci del contenuto o seleziona un file."
+    }
+  }
+}

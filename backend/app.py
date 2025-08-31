@@ -673,7 +673,12 @@ def verify_traveler_token(token):
         'traveler': {
             'id': traveler.id,
             'name': traveler.name,
-            'trip_name': traveler.trip.name
+            'trip_name': traveler.trip.name,
+            'trip': {
+                'id': traveler.trip.id,
+                'name': traveler.trip.name,
+                'blog_language': traveler.trip.blog_language
+            }
         }
     })
 
